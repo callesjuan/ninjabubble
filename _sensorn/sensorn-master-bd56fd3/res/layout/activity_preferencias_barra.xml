@@ -1,0 +1,63 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    tools:context=".ActivityPreferencias" >
+
+    <ToggleButton
+        android:id="@+id/toggleButton_service"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_centerVertical="true"
+        android:textOff="@string/config_button_off"
+        android:textOn="@string/config_button_on" />
+
+    <TextView
+        android:id="@+id/label_location"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/config_label_location_refresh"
+        android:textAppearance="?android:attr/textAppearanceLarge" />
+
+    <EditText
+        android:id="@+id/text_twitter"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/label_twitter"
+        android:layout_below="@+id/label_twitter"
+        android:layout_marginTop="16dp"
+        android:ems="10" />
+
+    <SeekBar
+        android:id="@+id/seekbar_location"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/label_location"
+        android:layout_below="@+id/label_location"
+        android:layout_marginTop="17dp"
+        android:max="6" />
+
+    <TextView
+        android:id="@+id/label_location_freq"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/seekbar_location"
+        android:layout_toRightOf="@+id/label_location"
+        android:textAppearance="?android:attr/textAppearanceMedium" />
+
+    <TextView
+        android:id="@+id/label_twitter"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/seekbar_location"
+        android:layout_below="@+id/seekbar_location"
+        android:layout_marginTop="24dp"
+        android:text="@string/config_label_twitter"
+        android:textAppearance="?android:attr/textAppearanceLarge" />
+
+</RelativeLayout>
