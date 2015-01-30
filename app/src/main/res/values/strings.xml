@@ -12,6 +12,12 @@
     <string name="lbl_media">Streaming App:</string>
     <string name="lbl_channel">Channel ID:</string>
     <string name="lbl_hashtags">Hashtags:</string>
+    <string name="fnc_lifecycle">Lifecycle</string>
+    <string name="fnc_minimap">Minimap</string>
+    <string name="fnc_members">Members</string>
+    <string name="fnc_hide">Hide</string>
+    <string name="btn_group_match">Find groups</string>
+    <string name="btn_stream_init">Start streaming</string>
 
     <string-array name="spin_media">
         <item>Twitcasting</item>

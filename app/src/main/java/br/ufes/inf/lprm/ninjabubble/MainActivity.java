@@ -16,8 +16,8 @@ import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.ToggleButton;
 
-import com.premnirmal.Magnet.IconCallback;
-import com.premnirmal.Magnet.Magnet;
+//import com.premnirmal.Magnet.IconCallback;
+//import com.premnirmal.Magnet.Magnet;
 
 
 public class MainActivity extends Activity {
