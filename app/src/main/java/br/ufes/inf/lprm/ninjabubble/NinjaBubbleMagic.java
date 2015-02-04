@@ -20,11 +20,29 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.jivesoftware.smack.AbstractXMPPConnection;
+import org.jivesoftware.smack.XMPPConnection;
+import org.jivesoftware.smack.XMPPException;
+import org.jivesoftware.smack.packet.XMPPError;
+import org.jivesoftware.smack.tcp.XMPPTCPConnection;
+
 public class NinjaBubbleMagic extends Service {
 
     private String TAG = "NinjaBubbleMagic";
 
     private int mNotificationId = 1985;
+
+    private AbstractXMPPConnection xmppConnection;
+
+    private String mJID;
+    private String mPWD;
+    private String mChannel;
+    private String mMedia;
+
+    private String mFullJID;
+    private String mNick;
+    private String mDomain;
+    private String mMUC;
 
     private WindowManager mWindowManager;
     private LinearLayout mParentLayout;
@@ -48,7 +66,34 @@ public class NinjaBubbleMagic extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         Toast.makeText(this, "NinjaBubble starting", Toast.LENGTH_SHORT).show();
 
+        mJID = intent.getStringExtra("jid");
+        mPWD = intent.getStringExtra("pwd");
+        mChannel = intent.getStringExtra("channel");
+        mMedia = intent.getStringExtra("media");
+
+        String []splittedJID = mJID.split("@");
+        mNick = splittedJID[0];
+        mDomain = splittedJID[1];
+        mFullJID = mJID + "/device";
+
         // Connect to XMPP server
+        try {
+            Log.i(TAG, String.format("Trying to XMPPConnection with (%s, %s, %s)", mNick, mPWD, mDomain));
+            xmppConnection = new XMPPTCPConnection(mNick, mPWD, mDomain);
+            xmppConnection.connect();
+            if(xmppConnection.isConnected()) {
+                Log.i(TAG, "XMPPConnection established");
+            }
+            else {
+                Log.e(TAG, "XMPPConnection was not established");
+                throw new Exception();
+            }
+        }
+        catch(Exception e) {
+            Log.e(TAG, "Error while establishing XMPPConnection");
+            stopSelf();
+            return START_STICKY;
+        }
 
         // Starting overlay UI
         mWindowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
@@ -219,7 +264,7 @@ public class NinjaBubbleMagic extends Service {
             mWindowManager.removeView(mNinjaHead);
             mWindowManager.removeView(mParentLayout);
         }
-        catch (IllegalArgumentException e) {
+        catch (NullPointerException e) {
             Log.e(TAG, "views were not added to windowmanager");
         }
         stopForeground(false);
