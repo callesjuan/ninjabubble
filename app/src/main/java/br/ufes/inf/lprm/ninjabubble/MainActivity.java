@@ -16,6 +16,13 @@ import android.widget.ImageView;
 import android.widget.Spinner;
 import android.widget.ToggleButton;
 
+import org.jivesoftware.smack.AbstractXMPPConnection;
+import org.jivesoftware.smack.ConnectionConfiguration;
+import org.jivesoftware.smack.tcp.XMPPTCPConnection;
+import org.jivesoftware.smack.tcp.XMPPTCPConnectionConfiguration;
+
+import javax.net.SocketFactory;
+
 //import com.premnirmal.Magnet.IconCallback;
 //import com.premnirmal.Magnet.Magnet;
 
@@ -35,6 +42,39 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        try {
+            String mNick = "mapper";
+            String mPWD = "123";
+            String mDomain = "juancalles.ddns.net";
+            String mHost = "179.179.18.64";
+
+//            AbstractXMPPConnection xmppConnection = new XMPPTCPConnection(mNick, mPWD, mDomain);
+
+            XMPPTCPConnectionConfiguration.Builder configBuilder = XMPPTCPConnectionConfiguration.builder();
+            configBuilder.setUsernameAndPassword(mNick, mPWD);
+            configBuilder.setServiceName(mDomain);
+            configBuilder.setHost(mDomain);
+            configBuilder.setSecurityMode(ConnectionConfiguration.SecurityMode.disabled);
+//            configBuilder.setSocketFactory(new DummySSLSocketFactory());
+//            configBuilder.setCompressionEnabled(false);
+            XMPPTCPConnectionConfiguration config = configBuilder.build();
+            AbstractXMPPConnection xmppConnection = new XMPPTCPConnection(config);
+
+            Log.i(TAG, String.format("timeout:%s", config.getConnectTimeout()));
+
+            xmppConnection.connect();
+            xmppConnection.login();
+            if (xmppConnection.isConnected()) {
+                Log.i(TAG, "XMPPConnection established");
+            } else {
+                Log.e(TAG, "XMPPConnection was not established");
+//                throw new Exception();
+            }
+        }
+        catch (Exception e) {
+            Log.e(TAG, "Error while establishing XMPPConnection", e);
+        }
 
         SharedPreferences settings = getSharedPreferences("prefs", 0);
         if (settings.contains("serviceRunning")) {

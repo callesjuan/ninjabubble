@@ -21,10 +21,12 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import org.jivesoftware.smack.AbstractXMPPConnection;
+import org.jivesoftware.smack.ConnectionConfiguration;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.packet.XMPPError;
 import org.jivesoftware.smack.tcp.XMPPTCPConnection;
+import org.jivesoftware.smack.tcp.XMPPTCPConnectionConfiguration;
 
 public class NinjaBubbleMagic extends Service {
 
@@ -77,23 +79,6 @@ public class NinjaBubbleMagic extends Service {
         mFullJID = mJID + "/device";
 
         // Connect to XMPP server
-        try {
-            Log.i(TAG, String.format("Trying to XMPPConnection with (%s, %s, %s)", mNick, mPWD, mDomain));
-            xmppConnection = new XMPPTCPConnection(mNick, mPWD, mDomain);
-            xmppConnection.connect();
-            if(xmppConnection.isConnected()) {
-                Log.i(TAG, "XMPPConnection established");
-            }
-            else {
-                Log.e(TAG, "XMPPConnection was not established");
-                throw new Exception();
-            }
-        }
-        catch(Exception e) {
-            Log.e(TAG, "Error while establishing XMPPConnection");
-            stopSelf();
-            return START_STICKY;
-        }
 
         // Starting overlay UI
         mWindowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
