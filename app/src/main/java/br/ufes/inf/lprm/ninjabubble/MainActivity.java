@@ -1,27 +1,25 @@
 package br.ufes.inf.lprm.ninjabubble;
 
 import android.app.Activity;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
-import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
+import android.os.StrictMode;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
-import android.widget.ImageView;
 import android.widget.Spinner;
+import android.widget.Toast;
 import android.widget.ToggleButton;
 
-import org.jivesoftware.smack.AbstractXMPPConnection;
-import org.jivesoftware.smack.ConnectionConfiguration;
+import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.tcp.XMPPTCPConnection;
-import org.jivesoftware.smack.tcp.XMPPTCPConnectionConfiguration;
-
-import javax.net.SocketFactory;
 
 //import com.premnirmal.Magnet.IconCallback;
 //import com.premnirmal.Magnet.Magnet;
@@ -32,53 +30,23 @@ public class MainActivity extends Activity {
     private String TAG = "NinjaBubble";
 
     private boolean mServiceRunning;
+    private DataUpdateReceiver mDataUpdateReceiver;
 
     private String mJID;
     private String mPWD;
     private String mChannel;
     private String mMedia;
 
+    public final static String ERROR_XMPP_CONNECTION = "ERROR_XMPP_CONNECTION";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        try {
-            String mNick = "mapper";
-            String mPWD = "123";
-            String mDomain = "juancalles.ddns.net";
-            String mHost = "179.179.18.64";
-
-//            AbstractXMPPConnection xmppConnection = new XMPPTCPConnection(mNick, mPWD, mDomain);
-
-            XMPPTCPConnectionConfiguration.Builder configBuilder = XMPPTCPConnectionConfiguration.builder();
-            configBuilder.setUsernameAndPassword(mNick, mPWD);
-            configBuilder.setServiceName(mDomain);
-            configBuilder.setHost(mDomain);
-            configBuilder.setSecurityMode(ConnectionConfiguration.SecurityMode.disabled);
-//            configBuilder.setSocketFactory(new DummySSLSocketFactory());
-//            configBuilder.setCompressionEnabled(false);
-            XMPPTCPConnectionConfiguration config = configBuilder.build();
-            AbstractXMPPConnection xmppConnection = new XMPPTCPConnection(config);
-
-            Log.i(TAG, String.format("timeout:%s", config.getConnectTimeout()));
-
-            xmppConnection.connect();
-            xmppConnection.login();
-            if (xmppConnection.isConnected()) {
-                Log.i(TAG, "XMPPConnection established");
-            } else {
-                Log.e(TAG, "XMPPConnection was not established");
-//                throw new Exception();
-            }
-        }
-        catch (Exception e) {
-            Log.e(TAG, "Error while establishing XMPPConnection", e);
-        }
-
         SharedPreferences settings = getSharedPreferences("prefs", 0);
         if (settings.contains("serviceRunning")) {
-            Log.i(TAG, "__getSharedPreferences");
+//            Log.i(TAG, "__getSharedPreferences");
             mServiceRunning = settings.getBoolean("serviceRunning", false);
             mJID = settings.getString("jid", "");
             mPWD = settings.getString("pwd", "");
@@ -111,6 +79,7 @@ public class MainActivity extends Activity {
 
                         if (mJID.isEmpty() || mPWD.isEmpty() || mChannel.isEmpty()) {
                             Log.e(TAG, "required fields missing");
+                            Toast.makeText(MainActivity.this, "All inputs are required", Toast.LENGTH_SHORT).show();
                             toggleService.setChecked(false);
                             return;
                         }
@@ -155,13 +124,17 @@ public class MainActivity extends Activity {
 
                     Log.i(TAG, "NinjaBubbleMagic has stopped");
 
-                    vJID.setFocusable(false);
+                    vJID.setFocusable(true);
                     vPWD.setFocusable(true);
                     vChannel.setFocusable(true);
                     vMedia.setClickable(true);
                 }
             }
         });
+
+        vJID.setText("src1@juancalles.ddns.net");
+        vPWD.setText("123");
+        vChannel.setText("callesjuan");
     }
 
     @Override
@@ -191,13 +164,27 @@ public class MainActivity extends Activity {
             ((Spinner) findViewById(R.id.spin_media)).setClickable(false);
         } else {
             ((ToggleButton) findViewById(R.id.toggle_magic)).setChecked(false);
+
+            ((EditText) findViewById(R.id.txt_jid)).setFocusable(true);
+            ((EditText) findViewById(R.id.txt_pwd)).setFocusable(true);
+            ((EditText) findViewById(R.id.txt_channel)).setFocusable(true);
+            ((Spinner) findViewById(R.id.spin_media)).setClickable(true);
         }
+
+        if (mDataUpdateReceiver == null) {
+            mDataUpdateReceiver = new DataUpdateReceiver();
+        }
+        IntentFilter intentFilter = new IntentFilter(ERROR_XMPP_CONNECTION);
+        registerReceiver(mDataUpdateReceiver, intentFilter);
     }
 
     @Override
     protected void onPause() {
         super.onPause();
         Log.i(TAG, "__onPause");
+        if (mDataUpdateReceiver != null) {
+            unregisterReceiver(mDataUpdateReceiver);
+        }
     }
 
     @Override
@@ -217,6 +204,26 @@ public class MainActivity extends Activity {
             editor.commit();
 
             Log.i(TAG, "__putSharedPreferences");
+        }
+    }
+
+    private class DataUpdateReceiver extends BroadcastReceiver {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (intent.getAction().equals(ERROR_XMPP_CONNECTION)) {
+                Log.e(TAG, intent.getStringExtra("value"));
+                Toast.makeText(MainActivity.this, intent.getStringExtra("value"), Toast.LENGTH_SHORT).show();
+
+                ((ToggleButton) findViewById(R.id.toggle_magic)).setChecked(false);
+
+                ((EditText) findViewById(R.id.txt_jid)).setFocusable(true);
+                ((EditText) findViewById(R.id.txt_pwd)).setFocusable(true);
+                ((EditText) findViewById(R.id.txt_channel)).setFocusable(true);
+                ((Spinner) findViewById(R.id.spin_media)).setClickable(true);
+
+                mServiceRunning = false;
+            }
         }
     }
 

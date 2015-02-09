@@ -6,6 +6,7 @@ import android.app.Service;
 import android.content.Intent;
 import android.graphics.PixelFormat;
 import android.os.IBinder;
+import android.os.StrictMode;
 import android.support.v4.app.NotificationCompat;
 import android.util.DisplayMetrics;
 import android.util.Log;
@@ -20,13 +21,9 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import org.jivesoftware.smack.AbstractXMPPConnection;
-import org.jivesoftware.smack.ConnectionConfiguration;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.XMPPException;
-import org.jivesoftware.smack.packet.XMPPError;
 import org.jivesoftware.smack.tcp.XMPPTCPConnection;
-import org.jivesoftware.smack.tcp.XMPPTCPConnectionConfiguration;
 
 public class NinjaBubbleMagic extends Service {
 
@@ -34,7 +31,7 @@ public class NinjaBubbleMagic extends Service {
 
     private int mNotificationId = 1985;
 
-    private AbstractXMPPConnection xmppConnection;
+    private XMPPConnection mXmppConnection;
 
     private String mJID;
     private String mPWD;
@@ -79,6 +76,38 @@ public class NinjaBubbleMagic extends Service {
         mFullJID = mJID + "/device";
 
         // Connect to XMPP server
+        try {
+            if (android.os.Build.VERSION.SDK_INT > 9) {
+                StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+                StrictMode.setThreadPolicy(policy);
+            }
+            mXmppConnection = new XMPPTCPConnection(mDomain);
+            mXmppConnection.connect();
+            if (mXmppConnection.isConnected()) {
+                Log.i(TAG, "XMPPConnection established");
+            } else {
+                Log.e(TAG, "XMPPConnection was not established");
+                throw new Exception("Connection not established");
+            }
+
+            mXmppConnection.login(mNick, mPWD);
+            if (mXmppConnection.isAuthenticated()) {
+                Log.i(TAG, "XMPPConnection authenticated");
+            }
+            else {
+                Log.e(TAG, "XMPPConnection was not authenticated");
+                throw new Exception("JID not authenticated");
+            }
+        }
+        catch (Exception e) {
+            Log.e(TAG, "Error while establishing XMPPConnection", e);
+            Intent errorXmppConnection = new Intent(MainActivity.ERROR_XMPP_CONNECTION);
+            errorXmppConnection.putExtra("value", e.getMessage());
+            sendBroadcast(errorXmppConnection);
+
+            stopSelf();
+            return START_STICKY;
+        }
 
         // Starting overlay UI
         mWindowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
@@ -250,7 +279,13 @@ public class NinjaBubbleMagic extends Service {
             mWindowManager.removeView(mParentLayout);
         }
         catch (NullPointerException e) {
-            Log.e(TAG, "views were not added to windowmanager");
+            Log.w(TAG, "views were not added to windowmanager");
+        }
+        try {
+            mXmppConnection.disconnect();
+        }
+        catch  (Exception e) {
+            Log.w(TAG, "XMPPConnection probably did not exist");
         }
         stopForeground(false);
         stopSelf();
