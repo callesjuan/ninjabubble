@@ -7,7 +7,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.os.StrictMode;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -17,9 +16,6 @@ import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.Toast;
 import android.widget.ToggleButton;
-
-import org.jivesoftware.smack.XMPPConnection;
-import org.jivesoftware.smack.tcp.XMPPTCPConnection;
 
 //import com.premnirmal.Magnet.IconCallback;
 //import com.premnirmal.Magnet.Magnet;

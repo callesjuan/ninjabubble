@@ -18,6 +18,9 @@
     <string name="fnc_hide">Hide</string>
     <string name="btn_group_match">Find groups</string>
     <string name="btn_stream_init">Start streaming</string>
+    <string name="btn_stream_pause">Pause stream</string>
+    <string name="btn_stream_resume">Resume stream</string>
+    <string name="btn_stream_close">Close stream</string>
 
     <string-array name="spin_media">
         <item>Twitcasting</item>

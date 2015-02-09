@@ -4,249 +4,138 @@ import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
-import android.graphics.PixelFormat;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.HandlerThread;
 import android.os.IBinder;
+import android.os.Looper;
+import android.os.Message;
 import android.os.StrictMode;
 import android.support.v4.app.NotificationCompat;
-import android.util.DisplayMetrics;
 import android.util.Log;
-import android.view.Gravity;
-import android.view.MotionEvent;
-import android.view.View;
-import android.view.ViewGroup;
 import android.view.WindowManager;
-import android.widget.Button;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import org.jivesoftware.smack.XMPPConnection;
-import org.jivesoftware.smack.XMPPException;
 import org.jivesoftware.smack.tcp.XMPPTCPConnection;
+
+import br.ufes.inf.lprm.ninjabubble.br.ufes.inf.lprm.ninjabubble.views.OverlayView;
 
 public class NinjaBubbleMagic extends Service {
 
-    private String TAG = "NinjaBubbleMagic";
+    public String TAG = "NinjaBubbleMagic";
 
-    private int mNotificationId = 1985;
+    public int mNotificationId = 1985;
 
-    private XMPPConnection mXmppConnection;
+    private Looper mServiceLooper;
+    private ServiceHandler mServiceHandler;
 
-    private String mJID;
-    private String mPWD;
-    private String mChannel;
-    private String mMedia;
+    public WindowManager mWindowManager;
+    public OverlayView mOverlayView;
 
-    private String mFullJID;
-    private String mNick;
-    private String mDomain;
-    private String mMUC;
+    public XMPPConnection mXmppConnection;
 
-    private WindowManager mWindowManager;
-    private LinearLayout mParentLayout;
-    private LinearLayout mMenuLayout;
-    private LinearLayout mContentLayout;
-    private ImageView mNinjaHead;
+    public String mJID;
+    public String mPWD;
+    public String mChannel;
+    public String mMedia;
 
-    private Button bGroupMatch;
-    private Button bStreamInit;
-    private Button bHide;
+    public String mFullJID;
+    public String mNick;
+    public String mDomain;
+    public String mMUC;
+
+    private final static String ACTION_ONSTARTCOMMAND = "ACTION_ONSTARTCOMMAND";
+    private final static String ACTION_ONDESTROY = "ACTION_ONDESTROY";
 
     public NinjaBubbleMagic() {
     }
 
+    private final class ServiceHandler extends Handler {
+        public ServiceHandler(Looper looper) {
+            super(looper);
+        }
+
+        @Override
+        public void handleMessage(Message msg) {
+            if (msg.getData().getString("action").equals(ACTION_ONSTARTCOMMAND)) {
+                mJID = msg.getData().getString("jid");
+                mPWD = msg.getData().getString("pwd");
+                mChannel = msg.getData().getString("channel");
+                mMedia = msg.getData().getString("media");
+
+                String[] splittedJID = mJID.split("@");
+                mNick = splittedJID[0];
+                mDomain = splittedJID[1];
+                mFullJID = mJID + "/device";
+
+                // Connect to XMPP server
+                try {
+                    mXmppConnection = new XMPPTCPConnection(mDomain);
+                    mXmppConnection.connect();
+                    mXmppConnection.login(mNick, mPWD);
+
+                    // Check stream status
+                    
+
+                } catch (Exception e) {
+                    Log.e(TAG, "Error while establishing XMPPConnection", e);
+                    Intent errorXmppConnection = new Intent(MainActivity.ERROR_XMPP_CONNECTION);
+                    errorXmppConnection.putExtra("value", e.getMessage());
+                    sendBroadcast(errorXmppConnection);
+
+                    stopSelf();
+                    return;
+                }
+
+                // Starting overlay UI
+                mWindowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
+                mOverlayView = new OverlayView(NinjaBubbleMagic.this, mWindowManager);
+                mOverlayView.start();
+            } else if (msg.getData().getString("action").equals(ACTION_ONDESTROY)) {
+                try {
+                    mOverlayView.finish();
+                    Log.i(TAG, "OverlayView succesfully removed");
+                }
+                catch (Exception e) {
+                    Log.w(TAG, "views were not added to windowmanager");
+                }
+                try {
+                    mXmppConnection.disconnect();
+                    Log.i(TAG, "XMPPConnection succesfully terminated");
+                }
+                catch  (Exception e) {
+                    Log.w(TAG, "XMPPConnection probably did not exist");
+                }
+            }
+        }
+    }
+
+
     @Override
     public void onCreate() {
+
         super.onCreate();
+
+        HandlerThread thread = new HandlerThread("ServiceHandler",
+                android.os.Process.THREAD_PRIORITY_BACKGROUND);
+        thread.start();
+
+        // Get the HandlerThread's Looper and use it for our Handler
+        mServiceLooper = thread.getLooper();
+        mServiceHandler = new ServiceHandler(mServiceLooper);
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Toast.makeText(this, "NinjaBubble starting", Toast.LENGTH_SHORT).show();
 
-        mJID = intent.getStringExtra("jid");
-        mPWD = intent.getStringExtra("pwd");
-        mChannel = intent.getStringExtra("channel");
-        mMedia = intent.getStringExtra("media");
-
-        String []splittedJID = mJID.split("@");
-        mNick = splittedJID[0];
-        mDomain = splittedJID[1];
-        mFullJID = mJID + "/device";
-
-        // Connect to XMPP server
-        try {
-            if (android.os.Build.VERSION.SDK_INT > 9) {
-                StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
-                StrictMode.setThreadPolicy(policy);
-            }
-            mXmppConnection = new XMPPTCPConnection(mDomain);
-            mXmppConnection.connect();
-            if (mXmppConnection.isConnected()) {
-                Log.i(TAG, "XMPPConnection established");
-            } else {
-                Log.e(TAG, "XMPPConnection was not established");
-                throw new Exception("Connection not established");
-            }
-
-            mXmppConnection.login(mNick, mPWD);
-            if (mXmppConnection.isAuthenticated()) {
-                Log.i(TAG, "XMPPConnection authenticated");
-            }
-            else {
-                Log.e(TAG, "XMPPConnection was not authenticated");
-                throw new Exception("JID not authenticated");
-            }
-        }
-        catch (Exception e) {
-            Log.e(TAG, "Error while establishing XMPPConnection", e);
-            Intent errorXmppConnection = new Intent(MainActivity.ERROR_XMPP_CONNECTION);
-            errorXmppConnection.putExtra("value", e.getMessage());
-            sendBroadcast(errorXmppConnection);
-
-            stopSelf();
-            return START_STICKY;
-        }
-
-        // Starting overlay UI
-        mWindowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
-        final WindowManager.LayoutParams paramsNinjaHead = new WindowManager.LayoutParams(
-                WindowManager.LayoutParams.WRAP_CONTENT,
-                WindowManager.LayoutParams.WRAP_CONTENT,
-                WindowManager.LayoutParams.TYPE_SYSTEM_ALERT,
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
-                PixelFormat.TRANSLUCENT
-        );
-        final WindowManager.LayoutParams paramsParentLayout = new WindowManager.LayoutParams(
-                WindowManager.LayoutParams.WRAP_CONTENT,
-                WindowManager.LayoutParams.WRAP_CONTENT,
-                WindowManager.LayoutParams.TYPE_SYSTEM_ALERT,
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
-                PixelFormat.TRANSLUCENT
-        );
-
-        mNinjaHead = new ImageView(this);
-        mNinjaHead.setImageResource(R.drawable.ic_launcher);
-        mNinjaHead.setOnTouchListener(new View.OnTouchListener() {
-            private int TOUCH_TIME_THRESHOLD = 200;
-            private int initialX;
-            private int initialY;
-            private float initialTouchX;
-            private float initialTouchY;
-            private long lastTouchDown;
-
-            @Override public boolean onTouch(View v, MotionEvent event) {
-                switch (event.getAction()) {
-                    case MotionEvent.ACTION_DOWN:
-                        initialX = paramsNinjaHead.x;
-                        initialY = paramsNinjaHead.y;
-                        initialTouchX = event.getRawX();
-                        initialTouchY = event.getRawY();
-                        lastTouchDown = System.currentTimeMillis();
-                        return true;
-                    case MotionEvent.ACTION_UP:
-                        if (System.currentTimeMillis() - lastTouchDown < TOUCH_TIME_THRESHOLD) {
-                            mNinjaHead.setVisibility(View.GONE);
-                            mParentLayout.setVisibility(View.VISIBLE);
-                        }
-                        return true;
-                    case MotionEvent.ACTION_MOVE:
-                        paramsNinjaHead.x = initialX + (int) (event.getRawX() - initialTouchX);
-                        paramsNinjaHead.y = initialY + (int) (event.getRawY() - initialTouchY);
-                        mWindowManager.updateViewLayout(mNinjaHead, paramsNinjaHead);
-                        return true;
-                }
-                return false;
-            }
-        });
-
-        mParentLayout = new LinearLayout(this);
-        mParentLayout.setOrientation(LinearLayout.VERTICAL);
-        mParentLayout.setBackgroundColor(0x88ff0000);
-        mParentLayout.setBackgroundResource(R.drawable.shape);
-        mParentLayout.setVisibility(View.GONE);
-
-        DisplayMetrics metrics = new DisplayMetrics();
-        mWindowManager.getDefaultDisplay().getMetrics(metrics);
-
-        mMenuLayout = new LinearLayout(this);
-        mMenuLayout.setGravity(Gravity.CENTER);
-        mParentLayout.addView(mMenuLayout);
-
-        mContentLayout = new LinearLayout(this);
-        int contentWidth = (int)(metrics.widthPixels * 0.9);
-        int contentHeight = (int)(metrics.heightPixels * 0.6);
-        mContentLayout.setLayoutParams(new LinearLayout.LayoutParams(contentWidth, contentHeight));
-        mParentLayout.addView(mContentLayout);
-
-        bGroupMatch = new Button(this);
-        bGroupMatch.setText(R.string.btn_group_match);
-        bGroupMatch.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mContentLayout.removeAllViews();
-                TextView tv = new TextView(NinjaBubbleMagic.this);
-                tv.setText("groupmatch");
-                mContentLayout.addView(tv);
-            }
-        });
-        //mMenuLayout.addView(bGroupMatch);
-
-        bStreamInit = new Button(this);
-        bStreamInit.setText(R.string.btn_stream_init);
-        bStreamInit.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mContentLayout.removeAllViews();
-                TextView tv = new TextView(NinjaBubbleMagic.this);
-                tv.setText("streaminit");
-                mContentLayout.addView(tv);
-            }
-        });
-        //mMenuLayout.addView(bStreamInit);
-
-        bHide = new Button(this);
-        //bHide.setText(R.string.btn_hide);
-        bHide.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mParentLayout.setVisibility(View.GONE);
-                mNinjaHead.setVisibility(View.VISIBLE);
-            }
-        });
-        //mMenuLayout.addView(bHide);
-
-        ImageView imHome = new ImageView(this);
-        imHome.setImageResource(R.drawable.home_50);
-        imHome.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0.25f));
-        mMenuLayout.addView(imHome);
-
-        ImageView imMinimap = new ImageView(this);
-        imMinimap.setImageResource(R.drawable.map_marker_50);
-        imMinimap.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0.25f));
-        mMenuLayout.addView(imMinimap);
-
-        ImageView imGroup = new ImageView(this);
-        imGroup.setImageResource(R.drawable.group_50);
-        imGroup.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0.25f));
-        mMenuLayout.addView(imGroup);
-
-        ImageView imHide = new ImageView(this);
-        imHide.setImageResource(R.drawable.return_50);
-        imHide.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0.25f));
-        imHide.setClickable(true);
-        imHide.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mParentLayout.setVisibility(View.GONE);
-                mNinjaHead.setVisibility(View.VISIBLE);
-            }
-        });
-        mMenuLayout.addView(imHide);
-
-        mWindowManager.addView(mNinjaHead, paramsNinjaHead);
-        mWindowManager.addView(mParentLayout, paramsParentLayout);
+        Message msg = mServiceHandler.obtainMessage();
+        msg.arg1 = startId;
+        Bundle bundle = intent.getExtras();
+        bundle.putString("action", ACTION_ONSTARTCOMMAND);
+        msg.setData(bundle);
+        mServiceHandler.sendMessage(msg);
 
         // Sending service to the foreground
         Intent notificationIntent = new Intent(this,
@@ -274,20 +163,14 @@ public class NinjaBubbleMagic extends Service {
 
     @Override
     public void onDestroy() {
-        try {
-            mWindowManager.removeView(mNinjaHead);
-            mWindowManager.removeView(mParentLayout);
-        }
-        catch (NullPointerException e) {
-            Log.w(TAG, "views were not added to windowmanager");
-        }
-        try {
-            mXmppConnection.disconnect();
-        }
-        catch  (Exception e) {
-            Log.w(TAG, "XMPPConnection probably did not exist");
-        }
-        stopForeground(false);
+
+        Message msg = mServiceHandler.obtainMessage();
+        Bundle bundle = new Bundle();
+        bundle.putString("action", ACTION_ONDESTROY);
+        msg.setData(bundle);
+        mServiceHandler.sendMessage(msg);
+
+        stopForeground(true);
         stopSelf();
         Toast.makeText(this, "NinjaBubble stopped", Toast.LENGTH_SHORT).show();
     }
