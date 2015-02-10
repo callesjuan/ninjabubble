@@ -16,8 +16,14 @@ import android.util.Log;
 import android.view.WindowManager;
 import android.widget.Toast;
 
+import org.jivesoftware.smack.AbstractXMPPConnection;
+import org.jivesoftware.smack.ConnectionConfiguration;
 import org.jivesoftware.smack.XMPPConnection;
+import org.jivesoftware.smack.chat.Chat;
+import org.jivesoftware.smack.chat.ChatManager;
 import org.jivesoftware.smack.tcp.XMPPTCPConnection;
+import org.jivesoftware.smack.tcp.XMPPTCPConnectionConfiguration;
+import org.json.JSONStringer;
 
 import br.ufes.inf.lprm.ninjabubble.br.ufes.inf.lprm.ninjabubble.views.OverlayView;
 
@@ -33,7 +39,8 @@ public class NinjaBubbleMagic extends Service {
     public WindowManager mWindowManager;
     public OverlayView mOverlayView;
 
-    public XMPPConnection mXmppConnection;
+    public AbstractXMPPConnection mXmppConnection;
+    public Chat mMapperChat;
 
     public String mJID;
     public String mPWD;
@@ -43,6 +50,8 @@ public class NinjaBubbleMagic extends Service {
     public String mFullJID;
     public String mNick;
     public String mDomain;
+
+    public String mMapper;
     public String mMUC;
 
     private final static String ACTION_ONSTARTCOMMAND = "ACTION_ONSTARTCOMMAND";
@@ -69,14 +78,40 @@ public class NinjaBubbleMagic extends Service {
                 mDomain = splittedJID[1];
                 mFullJID = mJID + "/device";
 
-                // Connect to XMPP server
+                mMapper = String.format("mapper@%s", mDomain);
+                Log.i(TAG, String.format("mapper %s set", mMapper));
+
                 try {
-                    mXmppConnection = new XMPPTCPConnection(mDomain);
+                    // Connect to XMPP server
+                    XMPPTCPConnectionConfiguration.Builder configBuilder = XMPPTCPConnectionConfiguration.builder();
+                    configBuilder.setUsernameAndPassword(mNick, mPWD);
+                    configBuilder.setServiceName(mDomain);
+                    configBuilder.setResource("/device");
+                    configBuilder.setSecurityMode(ConnectionConfiguration.SecurityMode.disabled);
+
+                    mXmppConnection = new XMPPTCPConnection(configBuilder.build());
                     mXmppConnection.connect();
-                    mXmppConnection.login(mNick, mPWD);
+                    Log.i(TAG, "connected to XMPP server");
+                    mXmppConnection.login();
+                    Log.i(TAG, "logged into XMPP server");
+
+                    ChatManager chatManager = ChatManager.getInstanceFor(mXmppConnection);
+
+                    MapperListener mapperListener = new MapperListener(NinjaBubbleMagic.this);
+                    mMapperChat = chatManager.createChat(mMapper, mapperListener);
+
+                    String msgBody = new JSONStringer()
+                            .object()
+                                .key("func").value("stream_status")
+                                .key("args").object().endObject()
+                            .endObject()
+                            .toString();
+
+                    Log.i(TAG, msgBody);
+                    mMapperChat.sendMessage(msgBody);
 
                     // Check stream status
-                    
+
 
                 } catch (Exception e) {
                     Log.e(TAG, "Error while establishing XMPPConnection", e);

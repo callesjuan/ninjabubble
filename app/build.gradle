@@ -24,8 +24,9 @@ dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     compile 'com.android.support:appcompat-v7:21.0.3'
     //    compile 'com.premnirmal.magnet:library:1.1.1'
-    //    compile 'org.igniterealtime.smack:smack-android:4.1.0-beta2'
-    //    compile 'org.igniterealtime.smack:smack-tcp:4.1.0-beta2'
+    //    compile files('libs/asmack-android-8-4.0.6.jar')
+    compile 'org.igniterealtime.smack:smack-android:4.1.0-beta2'
+    compile 'org.igniterealtime.smack:smack-tcp:4.1.0-beta2'
+    compile 'org.igniterealtime.smack:smack-extensions:4.1.0-beta2'
     //    compile('eu.geekplace.javapinning:java-pinning-jar:1.0.0')
-    compile files('libs/asmack-android-8-4.0.6.jar')
 }
