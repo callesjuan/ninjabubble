@@ -13,6 +13,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import br.ufes.inf.lprm.ninjabubble.NinjaBubbleMagic;
 import br.ufes.inf.lprm.ninjabubble.R;
 
 /**
@@ -20,7 +21,7 @@ import br.ufes.inf.lprm.ninjabubble.R;
  */
 public class OverlayView {
 
-    public Service mService;
+    public NinjaBubbleMagic mService;
 
     public WindowManager mWindowManager;
     public LinearLayout mParentLayout;
@@ -37,7 +38,7 @@ public class OverlayView {
     public MinimapView vMinimap;
     public PartyView vParty;
 
-    public OverlayView(Service service, WindowManager windowManager) {
+    public OverlayView(NinjaBubbleMagic service, WindowManager windowManager) {
         mService = service;
         mWindowManager = windowManager;
     }

@@ -10,7 +10,6 @@ import android.os.HandlerThread;
 import android.os.IBinder;
 import android.os.Looper;
 import android.os.Message;
-import android.os.StrictMode;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.view.WindowManager;
@@ -18,11 +17,12 @@ import android.widget.Toast;
 
 import org.jivesoftware.smack.AbstractXMPPConnection;
 import org.jivesoftware.smack.ConnectionConfiguration;
-import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.chat.Chat;
 import org.jivesoftware.smack.chat.ChatManager;
 import org.jivesoftware.smack.tcp.XMPPTCPConnection;
 import org.jivesoftware.smack.tcp.XMPPTCPConnectionConfiguration;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.json.JSONStringer;
 
 import br.ufes.inf.lprm.ninjabubble.br.ufes.inf.lprm.ninjabubble.views.OverlayView;
@@ -40,7 +40,7 @@ public class NinjaBubbleMagic extends Service {
     public OverlayView mOverlayView;
 
     public AbstractXMPPConnection mXmppConnection;
-    public Chat mMapperChat;
+    public MapperChannel mMapperChannel;
 
     public String mJID;
     public String mPWD;
@@ -51,8 +51,13 @@ public class NinjaBubbleMagic extends Service {
     public String mNick;
     public String mDomain;
 
-    public String mMapper;
-    public String mMUC;
+    public String mMapperJID;
+    public String mMucJID;
+
+    public boolean mStreamStatusRequired = true;
+    public JSONObject mSource;
+    public JSONObject mStream;
+    public JSONArray mParty;
 
     private final static String ACTION_ONSTARTCOMMAND = "ACTION_ONSTARTCOMMAND";
     private final static String ACTION_ONDESTROY = "ACTION_ONDESTROY";
@@ -78,15 +83,15 @@ public class NinjaBubbleMagic extends Service {
                 mDomain = splittedJID[1];
                 mFullJID = mJID + "/device";
 
-                mMapper = String.format("mapper@%s", mDomain);
-                Log.i(TAG, String.format("mapper %s set", mMapper));
+                mMapperJID = String.format("mapper@%s", mDomain);
+                Log.i(TAG, String.format("mapper %s set", mMapperJID));
 
                 try {
                     // Connect to XMPP server
                     XMPPTCPConnectionConfiguration.Builder configBuilder = XMPPTCPConnectionConfiguration.builder();
                     configBuilder.setUsernameAndPassword(mNick, mPWD);
                     configBuilder.setServiceName(mDomain);
-                    configBuilder.setResource("/device");
+                    configBuilder.setResource("device");
                     configBuilder.setSecurityMode(ConnectionConfiguration.SecurityMode.disabled);
 
                     mXmppConnection = new XMPPTCPConnection(configBuilder.build());
@@ -95,23 +100,11 @@ public class NinjaBubbleMagic extends Service {
                     mXmppConnection.login();
                     Log.i(TAG, "logged into XMPP server");
 
-                    ChatManager chatManager = ChatManager.getInstanceFor(mXmppConnection);
-
-                    MapperListener mapperListener = new MapperListener(NinjaBubbleMagic.this);
-                    mMapperChat = chatManager.createChat(mMapper, mapperListener);
-
-                    String msgBody = new JSONStringer()
-                            .object()
-                                .key("func").value("stream_status")
-                                .key("args").object().endObject()
-                            .endObject()
-                            .toString();
-
-                    Log.i(TAG, msgBody);
-                    mMapperChat.sendMessage(msgBody);
+                    mMapperChannel = new MapperChannel(NinjaBubbleMagic.this);
 
                     // Check stream status
-
+                    mMapperChannel.streamStatus();
+                    Log.i(TAG, "streamStatus obtained");
 
                 } catch (Exception e) {
                     Log.e(TAG, "Error while establishing XMPPConnection", e);
