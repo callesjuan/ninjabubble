@@ -4,23 +4,23 @@ import android.content.Context;
 import android.widget.LinearLayout;
 
 /**
- * Created by Juan on 09/02/2015.
+ * Created by Juan on 11/02/2015.
  */
-public class MinimapView extends LinearLayout {
+public class ChatView extends LinearLayout {
     public OverlayView mOverlayView;
 
     public HomeView vHome;
-    public ChatView vChat;
+    public MinimapView vMinimap;
     public PartyView vParty;
 
-    public MinimapView(Context context) {
+    public ChatView(Context context) {
         super(context);
     }
 
-    public void setFamily(OverlayView overlayView, HomeView homeView, ChatView chatView, PartyView partyView) {
+    public void setFamily(OverlayView overlayView, HomeView homeView, MinimapView minimapView, PartyView partyView) {
         mOverlayView = overlayView;
         vHome = homeView;
-        vChat = chatView;
+        vMinimap = minimapView;
         vParty = partyView;
     }
 }

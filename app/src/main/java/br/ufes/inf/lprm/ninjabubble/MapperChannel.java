@@ -15,13 +15,14 @@ import org.json.JSONStringer;
  */
 public class MapperChannel implements ChatMessageListener {
 
-    private String TAG = "NinjaBubbleMagic::MapperListener";
+    private String TAG = "NinjaBubbleMagic/MapperListener";
 
     public NinjaBubbleMagic mService;
     public Chat mChat;
 
     public Object mLocker = new Object();
     public boolean mWaitingReply = false;
+    public long mTimeout = 1000 * 30;
 
     public MapperChannel(NinjaBubbleMagic service) {
         mService = service;
@@ -46,31 +47,10 @@ public class MapperChannel implements ChatMessageListener {
         }
     }
 
-    /*
-    REPLIES
+    /**
+     * streamStatus
      */
-    public void streamStatusReply(JSONObject args) {
-        try {
-            Log.i(TAG, "streamStatusReply");
-            Log.i(TAG, args.toString());
-            mService.mSource = args.getJSONObject("source");
-            mService.mStream = args.getJSONObject("stream");
-            mService.mStreamStatusRequired = false;
-            synchronized (mLocker) {
-                mWaitingReply = false;
-                mLocker.notify();
-            }
-        }
-        catch (Exception e) {
-            Log.e(TAG, "trouble in streamStatusReply", e);
-        }
-    }
-
-
-    /*
-    MESSAGES
-     */
-    public void streamStatus() {
+    public void streamStatus() throws Exception {
         try {
             String msgBody = new JSONStringer()
                     .object()
@@ -81,16 +61,48 @@ public class MapperChannel implements ChatMessageListener {
 
             Log.i(TAG, msgBody);
             mChat.sendMessage(msgBody);
+
             synchronized (mLocker) {
                 mWaitingReply = true;
-                while (mWaitingReply) {
-                    mLocker.wait();
+                mLocker.wait(mTimeout);
+                if (mWaitingReply) {
+                    mWaitingReply = false;
+                    throw new Exception("message timed out");
                 }
             }
         }
         catch (Exception e) {
             Log.e(TAG, "trouble in streamStatus", e);
+            throw e;
         }
     }
 
+    public void streamStatusReply(JSONObject args) {
+        try {
+            if (!mWaitingReply) {
+                return;
+            }
+
+            Log.i(TAG, "streamStatusReply");
+            Log.i(TAG, args.toString());
+            mService.mSource = args.getJSONObject("source");
+            mService.mStream = args.getJSONObject("stream");
+            mService.mStreamStatusRequired = false;
+
+            synchronized (mLocker) {
+                mWaitingReply = false;
+                mLocker.notify();
+            }
+        }
+        catch (Exception e) {
+            Log.e(TAG, "trouble in streamStatusReply", e);
+        }
+    }
+
+    /**
+     * streamInit
+     */
+    public void streamInit() {
+        Log.i(TAG, "streamInit called");
+    }
 }

@@ -31,11 +31,13 @@ public class OverlayView {
 
     public ImageView imHome;
     public ImageView imMinimap;
+    public ImageView imChat;
     public ImageView imParty;
     public ImageView imHide;
 
     public HomeView vHome;
     public MinimapView vMinimap;
+    public ChatView vChat;
     public PartyView vParty;
 
     public OverlayView(NinjaBubbleMagic service, WindowManager windowManager) {
@@ -131,17 +133,38 @@ public class OverlayView {
             imHome = new ImageView(mService);
             imHome.setImageResource(R.drawable.home_50);
             imHome.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0.25f));
+            imHome.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    mContentLayout.removeAllViews();
+                    mContentLayout.addView(vHome);
+                }
+            });
             mMenuLayout.addView(imHome);
 
             imMinimap = new ImageView(mService);
             imMinimap.setImageResource(R.drawable.map_marker_50);
             imMinimap.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0.25f));
+            imMinimap.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    mContentLayout.removeAllViews();
+                    mContentLayout.addView(vMinimap);
+                }
+            });
             mMenuLayout.addView(imMinimap);
 
-            imParty = new ImageView(mService);
-            imParty.setImageResource(R.drawable.group_50);
-            imParty.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0.25f));
-            mMenuLayout.addView(imParty);
+            imChat = new ImageView(mService);
+            imChat.setImageResource(R.drawable.group_50);
+            imChat.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0.25f));
+            imChat.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    mContentLayout.removeAllViews();
+                    mContentLayout.addView(vChat);
+                }
+            });
+            mMenuLayout.addView(imChat);
 
             imHide = new ImageView(mService);
             imHide.setImageResource(R.drawable.return_50);
@@ -164,18 +187,23 @@ public class OverlayView {
          */
         {
             mContentLayout = new LinearLayout(mService);
-            int contentWidth = (int) (metrics.widthPixels * 0.9);
-            int contentHeight = (int) (metrics.heightPixels * 0.6);
+            int contentWidth = (int) (metrics.widthPixels * 0.90);
+            int contentHeight = (int) (metrics.heightPixels * 0.75);
             mContentLayout.setLayoutParams(new LinearLayout.LayoutParams(contentWidth, contentHeight));
-            mParentLayout.addView(mContentLayout);
 
             vHome = new HomeView(mService);
             vMinimap = new MinimapView(mService);
+            vChat = new ChatView(mService);
             vParty = new PartyView(mService);
 
-            vHome.setFamily(this, vMinimap, vParty);
-            vMinimap.setFamily(this, vHome, vParty);
-            vParty.setFamily(this, vHome, vMinimap);
+            vHome.setFamily(this, vMinimap, vChat, vParty);
+            vMinimap.setFamily(this, vHome, vChat, vParty);
+            vChat.setFamily(this, vHome, vMinimap, vParty);
+            vParty.setFamily(this, vHome, vMinimap, vChat);
+
+            mContentLayout.addView(vHome);
+
+            mParentLayout.addView(mContentLayout);
         }
 
         mWindowManager.addView(mParentLayout, paramsParentLayout);

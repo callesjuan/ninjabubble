@@ -11,14 +11,16 @@ public class PartyView extends LinearLayout {
 
     public HomeView vHome;
     public MinimapView vMinimap;
+    public ChatView vChat;
 
     public PartyView(Context context) {
         super(context);
     }
 
-    public void setFamily(OverlayView overlayView, HomeView homeView, MinimapView minimapView) {
+    public void setFamily(OverlayView overlayView, HomeView homeView, MinimapView minimapView, ChatView chatView) {
         mOverlayView = overlayView;
         vHome = homeView;
         vMinimap = minimapView;
+        vChat = chatView;
     }
 }

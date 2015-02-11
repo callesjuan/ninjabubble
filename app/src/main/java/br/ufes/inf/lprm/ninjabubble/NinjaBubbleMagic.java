@@ -41,6 +41,7 @@ public class NinjaBubbleMagic extends Service {
 
     public AbstractXMPPConnection mXmppConnection;
     public MapperChannel mMapperChannel;
+    public PartyChannel mPartyChannel;
 
     public String mJID;
     public String mPWD;
@@ -73,6 +74,10 @@ public class NinjaBubbleMagic extends Service {
         @Override
         public void handleMessage(Message msg) {
             if (msg.getData().getString("action").equals(ACTION_ONSTARTCOMMAND)) {
+                /*
+                check sensors (internet, gps, compass)
+                 */
+
                 mJID = msg.getData().getString("jid");
                 mPWD = msg.getData().getString("pwd");
                 mChannel = msg.getData().getString("channel");
@@ -101,6 +106,7 @@ public class NinjaBubbleMagic extends Service {
                     Log.i(TAG, "logged into XMPP server");
 
                     mMapperChannel = new MapperChannel(NinjaBubbleMagic.this);
+                    mPartyChannel = new PartyChannel(NinjaBubbleMagic.this);
 
                     // Check stream status
                     mMapperChannel.streamStatus();
