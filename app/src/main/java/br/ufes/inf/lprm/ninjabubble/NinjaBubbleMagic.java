@@ -4,6 +4,7 @@ import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
+import android.graphics.PixelFormat;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -12,7 +13,9 @@ import android.os.Looper;
 import android.os.Message;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
+import android.view.View;
 import android.view.WindowManager;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import org.jivesoftware.smack.AbstractXMPPConnection;
@@ -78,6 +81,9 @@ public class NinjaBubbleMagic extends Service {
                 check sensors (internet, gps, compass)
                  */
 
+                /*
+                handle input
+                 */
                 mJID = msg.getData().getString("jid");
                 mPWD = msg.getData().getString("pwd");
                 mChannel = msg.getData().getString("channel");

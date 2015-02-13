@@ -13,12 +13,12 @@ public class ChatView extends LinearLayout {
     public MinimapView vMinimap;
     public PartyView vParty;
 
-    public ChatView(Context context) {
+    public ChatView(Context context, OverlayView overlayView) {
         super(context);
+        mOverlayView = overlayView;
     }
 
-    public void setFamily(OverlayView overlayView, HomeView homeView, MinimapView minimapView, PartyView partyView) {
-        mOverlayView = overlayView;
+    public void setFamily(HomeView homeView, MinimapView minimapView, PartyView partyView) {
         vHome = homeView;
         vMinimap = minimapView;
         vParty = partyView;

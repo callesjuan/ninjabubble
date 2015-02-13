@@ -105,4 +105,41 @@ public class MapperChannel implements ChatMessageListener {
     public void streamInit() {
         Log.i(TAG, "streamInit called");
     }
+
+    public void streamInitReply() {
+
+    }
+
+    /**
+     * streamPause
+     */
+    public void streamPause() {
+        Log.i(TAG, "streamPause called");
+    }
+
+    public void streamPauseReply() {
+
+    }
+
+    /**
+     * streamResume
+     */
+    public void streamResume() {
+        Log.i(TAG, "streamResume called");
+    }
+
+    public void streamResumeReply() {
+
+    }
+
+    /**
+     * streamClose
+     */
+    public void streamClose () {
+        Log.i(TAG, "streamClose called");
+    }
+
+    public void streamCloseReply() {
+
+    }
 }

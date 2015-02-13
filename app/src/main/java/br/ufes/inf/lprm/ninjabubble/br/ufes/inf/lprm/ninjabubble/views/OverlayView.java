@@ -3,6 +3,7 @@ package br.ufes.inf.lprm.ninjabubble.br.ufes.inf.lprm.ninjabubble.views;
 import android.app.Service;
 import android.graphics.PixelFormat;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
@@ -11,6 +12,7 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import br.ufes.inf.lprm.ninjabubble.NinjaBubbleMagic;
@@ -21,6 +23,8 @@ import br.ufes.inf.lprm.ninjabubble.R;
  */
 public class OverlayView {
 
+    public final String TAG = "NinjaBubbleMagic/OverlayView";
+
     public NinjaBubbleMagic mService;
 
     public WindowManager mWindowManager;
@@ -28,6 +32,7 @@ public class OverlayView {
     public LinearLayout mMenuLayout;
     public LinearLayout mContentLayout;
     public ImageView mNinjaHead;
+    public ProgressBar mLoading;
 
     public ImageView imHome;
     public ImageView imMinimap;
@@ -49,6 +54,18 @@ public class OverlayView {
         // Starting overlay UI
         final WindowManager.LayoutParams paramsNinjaHead;
         final WindowManager.LayoutParams paramsParentLayout;
+
+        mLoading = new ProgressBar(mService);
+        mLoading.setIndeterminate(true);
+        mLoading.setVisibility(View.GONE);
+        mWindowManager.addView(mLoading, new WindowManager.LayoutParams(
+                        WindowManager.LayoutParams.WRAP_CONTENT,
+                        WindowManager.LayoutParams.WRAP_CONTENT,
+                        WindowManager.LayoutParams.TYPE_SYSTEM_ALERT,
+                        WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+                        PixelFormat.TRANSLUCENT
+                )
+        );
 
         /*
         NINJA HEAD
@@ -179,6 +196,8 @@ public class OverlayView {
             });
             mMenuLayout.addView(imHide);
 
+            disableMenu();
+
             mParentLayout.addView(mMenuLayout);
         }
 
@@ -191,15 +210,15 @@ public class OverlayView {
             int contentHeight = (int) (metrics.heightPixels * 0.75);
             mContentLayout.setLayoutParams(new LinearLayout.LayoutParams(contentWidth, contentHeight));
 
-            vHome = new HomeView(mService);
-            vMinimap = new MinimapView(mService);
-            vChat = new ChatView(mService);
-            vParty = new PartyView(mService);
+            vHome = new HomeView(mService, this);
+            vMinimap = new MinimapView(mService, this);
+            vChat = new ChatView(mService, this);
+            vParty = new PartyView(mService, this);
 
-            vHome.setFamily(this, vMinimap, vChat, vParty);
-            vMinimap.setFamily(this, vHome, vChat, vParty);
-            vChat.setFamily(this, vHome, vMinimap, vParty);
-            vParty.setFamily(this, vHome, vMinimap, vChat);
+            vHome.setFamily(vMinimap, vChat, vParty);
+            vMinimap.setFamily(vHome, vChat, vParty);
+            vChat.setFamily(vHome, vMinimap, vParty);
+            vParty.setFamily(vHome, vMinimap, vChat);
 
             mContentLayout.addView(vHome);
 
@@ -211,11 +230,24 @@ public class OverlayView {
 
     public void finish() throws Exception {
         try {
+            mWindowManager.removeView(mLoading);
             mWindowManager.removeView(mNinjaHead);
             mWindowManager.removeView(mParentLayout);
         }
         catch (Exception e) {
             throw e;
         }
+    }
+
+    public void enableMenu() {
+        imMinimap.setEnabled(true);
+        imChat.setEnabled(true);
+//        imParty.setEnabled(true);
+    }
+
+    public void disableMenu() {
+        imMinimap.setEnabled(false);
+        imChat.setEnabled(false);
+//        imParty.setEnabled(false);
     }
 }
