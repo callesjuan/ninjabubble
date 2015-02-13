@@ -23,4 +23,9 @@ public class MinimapView extends LinearLayout {
         vChat = chatView;
         vParty = partyView;
     }
+
+    public void show() {
+        mOverlayView.mContentLayout.removeAllViews();
+        mOverlayView.mContentLayout.addView(this);
+    }
 }

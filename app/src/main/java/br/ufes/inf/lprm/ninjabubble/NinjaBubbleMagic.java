@@ -5,12 +5,7 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
 import android.graphics.PixelFormat;
-import android.os.Bundle;
-import android.os.Handler;
-import android.os.HandlerThread;
-import android.os.IBinder;
-import android.os.Looper;
-import android.os.Message;
+import android.os.*;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.view.View;
@@ -36,8 +31,11 @@ public class NinjaBubbleMagic extends Service {
 
     public int mNotificationId = 1985;
 
-    private Looper mServiceLooper;
-    private ServiceHandler mServiceHandler;
+    public HandlerThread mHandlerThread;
+    public Looper mServiceLooper;
+    public ServiceHandler mServiceHandler;
+
+    public Handler mConcurrentHandler;
 
     public WindowManager mWindowManager;
     public OverlayView mOverlayView;
@@ -62,6 +60,7 @@ public class NinjaBubbleMagic extends Service {
     public JSONObject mSource;
     public JSONObject mStream;
     public JSONArray mParty;
+    public JSONArray mMatchedGroups;
 
     private final static String ACTION_ONSTARTCOMMAND = "ACTION_ONSTARTCOMMAND";
     private final static String ACTION_ONDESTROY = "ACTION_ONDESTROY";
@@ -157,12 +156,14 @@ public class NinjaBubbleMagic extends Service {
 
         super.onCreate();
 
-        HandlerThread thread = new HandlerThread("ServiceHandler",
+        mConcurrentHandler = new Handler();
+
+        mHandlerThread = new HandlerThread("ServiceHandler",
                 android.os.Process.THREAD_PRIORITY_BACKGROUND);
-        thread.start();
+        mHandlerThread.start();
 
         // Get the HandlerThread's Looper and use it for our Handler
-        mServiceLooper = thread.getLooper();
+        mServiceLooper = mHandlerThread.getLooper();
         mServiceHandler = new ServiceHandler(mServiceLooper);
     }
 
@@ -213,5 +214,14 @@ public class NinjaBubbleMagic extends Service {
         stopForeground(true);
         stopSelf();
         Toast.makeText(this, "NinjaBubble stopped", Toast.LENGTH_SHORT).show();
+    }
+
+    public void runOnUiThread(Runnable runnable) {
+        Handler handler = new Handler(mServiceLooper);
+        handler.post(runnable);
+    }
+
+    public void runConcurrentThread(Runnable runnable) {
+        mConcurrentHandler.post(runnable);
     }
 }

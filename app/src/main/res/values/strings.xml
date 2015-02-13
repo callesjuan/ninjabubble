@@ -17,10 +17,14 @@
     <string name="fnc_members">Members</string>
     <string name="fnc_hide">Hide</string>
     <string name="btn_group_match">Find groups</string>
+    <string name="btn_group_leave">Leave group</string>
     <string name="btn_stream_init">Start streaming</string>
     <string name="btn_stream_pause">Pause stream</string>
     <string name="btn_stream_resume">Resume stream</string>
     <string name="btn_stream_close">Close stream</string>
+    <string name="btn_cancel">Cancel</string>
+    <string name="alert_matched_groups">Matched groups</string>
+    <string name="alert_group_join">Confirm join?</string>
 
     <string-array name="spin_media">
         <item>Twitcasting</item>

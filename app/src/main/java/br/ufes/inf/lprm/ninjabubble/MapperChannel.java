@@ -142,4 +142,21 @@ public class MapperChannel implements ChatMessageListener {
     public void streamCloseReply() {
 
     }
+
+    /**
+     * groupMatch
+     */
+    public void groupMatch (double radius) {
+        Log.i(TAG, "groupMatch called");
+
+        try {
+            Thread.sleep(3000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void groupMatchReply() {
+
+    }
 }
