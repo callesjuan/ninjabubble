@@ -6,26 +6,19 @@ import android.widget.LinearLayout;
 /**
  * Created by Juan on 11/02/2015.
  */
-public class ChatView extends LinearLayout {
-    public OverlayView mOverlayView;
+public class ChatView extends ContentView {
 
     public HomeView vHome;
     public MinimapView vMinimap;
     public PartyView vParty;
 
     public ChatView(Context context, OverlayView overlayView) {
-        super(context);
-        mOverlayView = overlayView;
+        super(context, overlayView);
     }
 
     public void setFamily(HomeView homeView, MinimapView minimapView, PartyView partyView) {
         vHome = homeView;
         vMinimap = minimapView;
         vParty = partyView;
-    }
-
-    public void show() {
-        mOverlayView.mContentLayout.removeAllViews();
-        mOverlayView.mContentLayout.addView(this);
     }
 }

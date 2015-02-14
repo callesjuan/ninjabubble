@@ -5,23 +5,25 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
 import android.graphics.PixelFormat;
-import android.os.*;
+import android.os.Bundle;
+import android.os.Handler;
+import android.os.HandlerThread;
+import android.os.IBinder;
+import android.os.Looper;
+import android.os.Message;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
-import android.view.View;
 import android.view.WindowManager;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import org.jivesoftware.smack.AbstractXMPPConnection;
 import org.jivesoftware.smack.ConnectionConfiguration;
-import org.jivesoftware.smack.chat.Chat;
-import org.jivesoftware.smack.chat.ChatManager;
 import org.jivesoftware.smack.tcp.XMPPTCPConnection;
 import org.jivesoftware.smack.tcp.XMPPTCPConnectionConfiguration;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
-import org.json.JSONStringer;
 
 import br.ufes.inf.lprm.ninjabubble.br.ufes.inf.lprm.ninjabubble.views.OverlayView;
 
@@ -39,6 +41,7 @@ public class NinjaBubbleMagic extends Service {
 
     public WindowManager mWindowManager;
     public OverlayView mOverlayView;
+    public ProgressBar mLoading;
 
     public AbstractXMPPConnection mXmppConnection;
     public MapperChannel mMapperChannel;
@@ -79,6 +82,21 @@ public class NinjaBubbleMagic extends Service {
                 /*
                 check sensors (internet, gps, compass)
                  */
+                try {
+                    Thread.sleep(3000);
+
+                    mMatchedGroups = new JSONArray();
+                    JSONObject jsonObject = new JSONObject();
+                    jsonObject.put("hashtags", "#dilma13#aecionever#pt13");
+                    jsonObject.put("num_members", "3");
+                    JSONObject jsonObject1 = new JSONObject();
+                    mMatchedGroups.put(jsonObject);
+                    mMatchedGroups.put(jsonObject1);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
 
                 /*
                 handle input
@@ -118,19 +136,26 @@ public class NinjaBubbleMagic extends Service {
                     Log.i(TAG, "streamStatus obtained");
 
                 } catch (Exception e) {
+                    Intent intent = new Intent(getBaseContext(), MainActivity.class);
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    getApplication().startActivity(intent);
+
                     Log.e(TAG, "Error while establishing XMPPConnection", e);
                     Intent errorXmppConnection = new Intent(MainActivity.ERROR_XMPP_CONNECTION);
                     errorXmppConnection.putExtra("value", e.getMessage());
                     sendBroadcast(errorXmppConnection);
+
+                    mWindowManager.removeView(mLoading);
 
                     stopSelf();
                     return;
                 }
 
                 // Starting overlay UI
-                mWindowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
                 mOverlayView = new OverlayView(NinjaBubbleMagic.this, mWindowManager);
                 mOverlayView.start();
+
+                mWindowManager.removeView(mLoading);
             } else if (msg.getData().getString("action").equals(ACTION_ONDESTROY)) {
                 try {
                     mOverlayView.finish();
@@ -170,6 +195,18 @@ public class NinjaBubbleMagic extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         Toast.makeText(this, "NinjaBubble starting", Toast.LENGTH_SHORT).show();
+
+        mWindowManager = (WindowManager) getSystemService(WINDOW_SERVICE);
+        mLoading = new ProgressBar(this);
+        mLoading.setIndeterminate(true);
+        mWindowManager.addView(mLoading, new WindowManager.LayoutParams(
+                WindowManager.LayoutParams.WRAP_CONTENT,
+                WindowManager.LayoutParams.WRAP_CONTENT,
+                WindowManager.LayoutParams.TYPE_SYSTEM_ALERT,
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+                PixelFormat.TRANSLUCENT
+            )
+        );
 
         Message msg = mServiceHandler.obtainMessage();
         msg.arg1 = startId;

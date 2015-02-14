@@ -17,7 +17,7 @@ import br.ufes.inf.lprm.ninjabubble.R;
 /**
  * Created by Juan on 13/02/2015.
  */
-public class LookupView extends LinearLayout {
+public class _LookupView extends LinearLayout {
 
     public final String TAG = "NinjaBubbleMagic/LookupView";
 
@@ -26,7 +26,7 @@ public class LookupView extends LinearLayout {
     public ListView mListView;
     public Button mCancel;
 
-    public LookupView(Context context, OverlayView overlayView) {
+    public _LookupView(Context context, OverlayView overlayView) {
         super(context);
 
         mOverlayView = overlayView;

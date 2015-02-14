@@ -1,24 +1,17 @@
 package br.ufes.inf.lprm.ninjabubble.br.ufes.inf.lprm.ninjabubble.views;
 
-import android.app.AlertDialog;
-import android.app.ProgressDialog;
-import android.app.Service;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.PixelFormat;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
-import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.ProgressBar;
-import android.widget.TextView;
 
 import br.ufes.inf.lprm.ninjabubble.NinjaBubbleMagic;
 import br.ufes.inf.lprm.ninjabubble.R;
@@ -37,7 +30,6 @@ public class OverlayView {
     public LinearLayout mMenuLayout;
     public LinearLayout mContentLayout;
     public ImageView mNinjaHead;
-    public ProgressBar mLoading;
 
     public ImageView imHome;
     public ImageView imMinimap;
@@ -59,9 +51,6 @@ public class OverlayView {
         // Starting overlay UI
         final WindowManager.LayoutParams paramsNinjaHead;
         final WindowManager.LayoutParams paramsParentLayout;
-
-        mLoading = new ProgressBar(mService);
-        mLoading.setIndeterminate(true);
 
         /*
         NINJA HEAD
@@ -169,7 +158,7 @@ public class OverlayView {
             });
             mMenuLayout.addView(imHome);
 
-            bmap = BitmapFactory.decodeResource(mService.getResources(), R.drawable.map_marker_round);
+            bmap = BitmapFactory.decodeResource(mService.getResources(), R.drawable.map_marker_round_new);
             Bitmap bmpMinimap = Bitmap.createScaledBitmap(bmap, imSize, imSize, true);
 
             imMinimap = new ImageView(mService);
@@ -184,7 +173,7 @@ public class OverlayView {
             });
             mMenuLayout.addView(imMinimap);
 
-            bmap = BitmapFactory.decodeResource(mService.getResources(), R.drawable.group_round);
+            bmap = BitmapFactory.decodeResource(mService.getResources(), R.drawable.group_round_new);
             Bitmap bmpChat = Bitmap.createScaledBitmap(bmap, imSize, imSize, true);
 
             imChat = new ImageView(mService);
@@ -275,20 +264,5 @@ public class OverlayView {
         imMinimap.setEnabled(false);
         imChat.setEnabled(false);
 //        imParty.setEnabled(false);
-    }
-
-    public void loading() {
-        mWindowManager.addView(mLoading, new WindowManager.LayoutParams(
-                WindowManager.LayoutParams.WRAP_CONTENT,
-                WindowManager.LayoutParams.WRAP_CONTENT,
-                WindowManager.LayoutParams.TYPE_SYSTEM_ALERT,
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
-                PixelFormat.TRANSLUCENT
-            )
-        );
-    }
-
-    public void loaded() {
-        mWindowManager.removeView(mLoading);
     }
 }

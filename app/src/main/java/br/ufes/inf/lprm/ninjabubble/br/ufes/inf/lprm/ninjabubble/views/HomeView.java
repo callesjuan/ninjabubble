@@ -2,35 +2,27 @@ package br.ufes.inf.lprm.ninjabubble.br.ufes.inf.lprm.ninjabubble.views;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
-import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.os.Handler;
 import android.util.Log;
-import android.view.Gravity;
 import android.view.View;
-import android.view.ViewGroup;
-import android.view.Window;
 import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
-import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import br.ufes.inf.lprm.ninjabubble.MapperChannel;
 import br.ufes.inf.lprm.ninjabubble.R;
 
 /**
  * Created by Juan on 09/02/2015.
  */
-public class HomeView extends LinearLayout {
+public class HomeView extends ContentView {
     public final String TAG = "NinjaBubbleMagic/HomeView";
-
-    public OverlayView mOverlayView;
 
     public MinimapView vMinimap;
     public ChatView vChat;
@@ -48,16 +40,10 @@ public class HomeView extends LinearLayout {
     public final long LOOKUP_INTERVAL = 1000 * 30;
     public Dialog mLookupDialog;
 
-    public HomeView(Context context, OverlayView overlayView) {
-        super(context);
-        mOverlayView = overlayView;
+    public HomeView(Context context, final OverlayView overlayView) {
+        super(context, overlayView);
 
         Log.i(TAG, "created");
-
-        setGravity(Gravity.CENTER);
-        setOrientation(VERTICAL);
-
-        setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
         bStreamInit = new Button(getContext());
         bStreamInit.setText(R.string.btn_stream_init);
@@ -79,7 +65,7 @@ public class HomeView extends LinearLayout {
                 }
             }
         });
-        addView(bStreamInit);
+        mContentLayout.addView(bStreamInit);
 
         bStreamPause = new Button(getContext());
         bStreamPause.setText(R.string.btn_stream_pause);
@@ -101,7 +87,7 @@ public class HomeView extends LinearLayout {
                 }
             }
         });
-        addView(bStreamPause);
+        mContentLayout.addView(bStreamPause);
 
         bStreamResume = new Button(getContext());
         bStreamResume.setText(R.string.btn_stream_resume);
@@ -123,7 +109,7 @@ public class HomeView extends LinearLayout {
                 }
             }
         });
-        addView(bStreamResume);
+        mContentLayout.addView(bStreamResume);
 
         bStreamClose = new Button(getContext());
         bStreamClose.setText(R.string.btn_stream_close);
@@ -147,95 +133,102 @@ public class HomeView extends LinearLayout {
                 }
             }
         });
-        addView(bStreamClose);
+        mContentLayout.addView(bStreamClose);
 
         bGroupMatch = new Button(getContext());
         bGroupMatch.setText(R.string.btn_group_match);
         bGroupMatch.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-                hide();
-                mOverlayView.loading();
+                showLoading();
                 mOverlayView.mService.runConcurrentThread(new Runnable() {
                     @Override
                     public void run() {
-                        try {
 
-                            if (System.currentTimeMillis() - mLastLookup > LOOKUP_INTERVAL) {
+                        boolean msgError = false;
+                        boolean jsonError = false;
 
-                                try {
-                                    mOverlayView.mService.mMapperChannel.groupMatch(5);
-                                    mLastLookup = System.currentTimeMillis();
-                                } catch (Exception e) {
-                                    Log.e(TAG, "groupMatch", e);
-                                }
+                        if (System.currentTimeMillis() - mLastLookup > LOOKUP_INTERVAL) {
+
+                            try {
+                                mOverlayView.mService.mMapperChannel.groupMatch(5);
+                                mLastLookup = System.currentTimeMillis();
+                            } catch (Exception e) {
+                                Log.e(TAG, "groupMatch", e);
+                                Toast.makeText(getContext(), R.string.error_groupmatch, Toast.LENGTH_SHORT).show();
                             }
+                        }
 
+                        if (!msgError) {
                             JSONArray matchedGroups = mOverlayView.mService.mMatchedGroups;
-
-                            AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-                            builder.setTitle(R.string.alert_matched_groups);
-
-                            ListView modeList = new ListView(getContext());
-
-//                            String[] stringArray = new String[matchedGroups.length()];
-//                            for (int i = 0; i < matchedGroups.length(); i++) {
-//                                JSONObject group = matchedGroups.getJSONObject(i);
-//                                String hashtags = group.getString("hashtags");
-//                                String numMembers = group.getString("num_members");
-//                                stringArray[i] = String.format("%s (%s)", hashtags, numMembers);
-//                            }
-
-                            String[] stringArray = new String[]{"group 1", "group 2", "group 3", "group 4", "group 5"};
-
-                            ArrayAdapter<String> modeAdapter = new ArrayAdapter<String>(getContext(), android.R.layout.simple_list_item_1, android.R.id.text1, stringArray);
-                            modeList.setAdapter(modeAdapter);
-
-                            modeList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                                @Override
-                                public void onItemClick(AdapterView<?> parent, View view, final int position, long id) {
-                                    AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-                                    builder.setTitle(R.string.alert_group_join);
-                                    builder.setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
-                                        @Override
-                                        public void onClick(DialogInterface dialog, int which) {
-                                            // group_init OR group_join
-                                            Log.i(TAG, String.format("list index is %d", position));
-                                            mLookupDialog.dismiss();
-                                        }
-                                    });
-                                    builder.setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
-                                        @Override
-                                        public void onClick(DialogInterface dialog, int which) {
-                                            Log.i(TAG, String.format("cancel", position));
-                                        }
-                                    });
-                                    Dialog dialog = builder.create();
-                                    dialog.getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);
-                                    dialog.show();
+                            if (matchedGroups != null && matchedGroups.length() > 0) {
+                                ListView modeList = new ListView(getContext());
+                                String[] stringArray = new String[matchedGroups.length()];
+                                for (int i = 0; i < matchedGroups.length(); i++) {
+                                    try {
+                                        JSONObject group = matchedGroups.getJSONObject(i);
+                                        String hashtags = group.getString("hashtags");
+                                        String numMembers = group.getString("num_members");
+                                        stringArray[i] = String.format("%s (%s)", hashtags, numMembers);
+                                    } catch (Exception e) {
+                                        Log.e(TAG, "groupMatch", e);
+                                        Toast.makeText(getContext(), R.string.error_groupmatch, Toast.LENGTH_SHORT).show();
+                                        jsonError = true;
+                                        break;
+                                    }
                                 }
-                            });
+                                if (!jsonError) {
+                                    AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+                                    builder.setTitle(R.string.alert_matched_groups);
 
-                            builder.setView(modeList);
-                            mLookupDialog = builder.create();
-                            mLookupDialog.getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);
-                            mLookupDialog.show();
-                        } catch (Exception e) {
-                            Log.e(TAG, "groupMatch", e);
+                                    ArrayAdapter<String> modeAdapter = new ArrayAdapter<String>(getContext(), android.R.layout.simple_list_item_1, android.R.id.text1, stringArray);
+                                    modeList.setAdapter(modeAdapter);
+                                    modeList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                                        @Override
+                                        public void onItemClick(AdapterView<?> parent, View view, final int position, long id) {
+                                            AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+                                            builder.setTitle(R.string.alert_group_join);
+                                            builder.setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                                                @Override
+                                                public void onClick(DialogInterface dialog, int which) {
+                                                    // group_init OR group_join
+                                                    Log.i(TAG, String.format("list index is %d", position));
+                                                    mLookupDialog.dismiss();
+                                                }
+                                            });
+                                            builder.setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
+                                                @Override
+                                                public void onClick(DialogInterface dialog, int which) {
+                                                    Log.i(TAG, String.format("cancel", position));
+                                                }
+                                            });
+                                            Dialog dialog = builder.create();
+                                            dialog.getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);
+                                            dialog.show();
+                                        }
+                                    });
+                                    builder.setView(modeList);
+
+                                    mLookupDialog = builder.create();
+                                    mLookupDialog.getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);
+                                    mLookupDialog.show();
+                                }
+                            } else {
+                                Toast.makeText(getContext(), R.string.error_groupmatch_empty, Toast.LENGTH_SHORT).show();
+                            }
                         }
 
                         mOverlayView.mService.runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                                mOverlayView.loaded();
-                                show();
+                                showLoaded();
                             }
                         });
                     }
                 });
             }
         });
-        addView(bGroupMatch);
+        mContentLayout.addView(bGroupMatch);
 
         bGroupLeave = new Button(getContext());
         bGroupLeave.setText(R.string.btn_group_leave);
@@ -249,9 +242,7 @@ public class HomeView extends LinearLayout {
                 }
             }
         });
-        addView(bGroupLeave);
-
-        Log.i(TAG, mOverlayView.mService.mStream.toString());
+        mContentLayout.addView(bGroupLeave);
 
         if (mOverlayView.mService.mStream.has("stream_id")) {
             bStreamInit.setVisibility(GONE);
@@ -278,12 +269,5 @@ public class HomeView extends LinearLayout {
         vParty = partyView;
     }
 
-    public void show() {
-        mOverlayView.mContentLayout.removeAllViews();
-        mOverlayView.mContentLayout.addView(this);
-    }
 
-    public void hide() {
-        mOverlayView.mContentLayout.removeAllViews();
-    }
 }
