@@ -24,9 +24,15 @@
     <string name="btn_stream_close">Close stream</string>
     <string name="btn_cancel">Cancel</string>
     <string name="alert_matched_groups">Matched groups</string>
-    <string name="alert_group_join">Confirm join?</string>
+    <string name="alert_group_join">Confirm join\?</string>
     <string name="loading">Loading...</string>
-
+    <string name="alert_stream_init">Provide hashtags</string>
+    <string name="error_streaminit">Could not initiate stream</string>
+    <string name="error_streaminit_hashtags">Hashtags must be provided</string>
+    <string name="error_streampause">Could not pause stream</string>
+    <string name="error_streamresume">Could not resume stream</string>
+    <string name="error_streamclose">Could not close stream</string>
+    <string name="error_groupjoin">Could not join group, messaging won\'t be available</string>
     <string name="error_groupmatch">Error while finding groups</string>
     <string name="error_groupmatch_empty">No found groups</string>
 

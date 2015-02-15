@@ -42,6 +42,13 @@ public class OverlayView {
     public ChatView vChat;
     public PartyView vParty;
 
+    public Bitmap mBmpOn;
+    public Bitmap mBmpOff;
+    public Bitmap mBmpMinimap;
+    public Bitmap mBmpMinimapNew;
+    public Bitmap mBmpChat;
+    public Bitmap mBmpChatNew;
+
     public OverlayView(NinjaBubbleMagic service, WindowManager windowManager) {
         mService = service;
         mWindowManager = windowManager;
@@ -143,12 +150,14 @@ public class OverlayView {
             LinearLayout.LayoutParams menuParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
             menuParams.setMargins(marginH, marginV, marginH, marginV);
 
-            Bitmap bmap = BitmapFactory.decodeResource(mService.getResources(), R.drawable.home_round);
-            Bitmap bmpHome = Bitmap.createScaledBitmap(bmap, imSize, imSize, true);
+            Bitmap bmap = BitmapFactory.decodeResource(mService.getResources(), R.drawable.on);
+            mBmpOn = Bitmap.createScaledBitmap(bmap, imSize, imSize, true);
+            bmap = BitmapFactory.decodeResource(mService.getResources(), R.drawable.off);
+            mBmpOff = Bitmap.createScaledBitmap(bmap, imSize, imSize, true);
 
             imHome = new ImageView(mService);
 //            imHome.setImageResource(R.drawable.home_round);
-            imHome.setImageBitmap(bmpHome);
+            imHome.setImageBitmap(mBmpOff);
             imHome.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0.25f));
             imHome.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -158,12 +167,14 @@ public class OverlayView {
             });
             mMenuLayout.addView(imHome);
 
+            bmap = BitmapFactory.decodeResource(mService.getResources(), R.drawable.map_marker_round);
+            mBmpMinimap = Bitmap.createScaledBitmap(bmap, imSize, imSize, true);
             bmap = BitmapFactory.decodeResource(mService.getResources(), R.drawable.map_marker_round_new);
-            Bitmap bmpMinimap = Bitmap.createScaledBitmap(bmap, imSize, imSize, true);
+            mBmpMinimapNew = Bitmap.createScaledBitmap(bmap, imSize, imSize, true);
 
             imMinimap = new ImageView(mService);
 //            imMinimap.setImageResource(R.drawable.map_marker_round);
-            imMinimap.setImageBitmap(bmpMinimap);
+            imMinimap.setImageBitmap(mBmpMinimap);
             imMinimap.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0.25f));
             imMinimap.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -173,12 +184,14 @@ public class OverlayView {
             });
             mMenuLayout.addView(imMinimap);
 
+            bmap = BitmapFactory.decodeResource(mService.getResources(), R.drawable.group_round);
+            mBmpChat = Bitmap.createScaledBitmap(bmap, imSize, imSize, true);
             bmap = BitmapFactory.decodeResource(mService.getResources(), R.drawable.group_round_new);
-            Bitmap bmpChat = Bitmap.createScaledBitmap(bmap, imSize, imSize, true);
+            mBmpChatNew = Bitmap.createScaledBitmap(bmap, imSize, imSize, true);
 
             imChat = new ImageView(mService);
 //            imChat.setImageResource(R.drawable.group_round);
-            imChat.setImageBitmap(bmpChat);
+            imChat.setImageBitmap(mBmpChat);
             imChat.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0.25f));
             imChat.setOnClickListener(new View.OnClickListener() {
                 @Override

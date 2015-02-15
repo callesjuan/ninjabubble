@@ -33,6 +33,7 @@ public class MainActivity extends Activity {
     private String mChannel;
     private String mMedia;
 
+    public final static String ERROR_WHILE_STARTING = "ERROR_WHILE_STARTING";
     public final static String ERROR_XMPP_CONNECTION = "ERROR_XMPP_CONNECTION";
 
     @Override
@@ -131,6 +132,10 @@ public class MainActivity extends Activity {
         vJID.setText("src1@juancalles.ddns.net");
         vPWD.setText("123");
         vChannel.setText("callesjuan");
+
+        if (getIntent().hasExtra("flag") && getIntent().getExtras().getString("flag").equals(ERROR_WHILE_STARTING)) {
+            mServiceRunning = false;
+        }
     }
 
     @Override

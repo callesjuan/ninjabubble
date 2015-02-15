@@ -5,12 +5,7 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
 import android.graphics.PixelFormat;
-import android.os.Bundle;
-import android.os.Handler;
-import android.os.HandlerThread;
-import android.os.IBinder;
-import android.os.Looper;
-import android.os.Message;
+import android.os.*;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.view.WindowManager;
@@ -37,7 +32,10 @@ public class NinjaBubbleMagic extends Service {
     public Looper mServiceLooper;
     public ServiceHandler mServiceHandler;
 
-    public Handler mConcurrentHandler;
+    public HandlerThread mHandlerParallel;
+    public Looper mParallelLooper;
+
+//    public Handler mConcurrentHandler;
 
     public WindowManager mWindowManager;
     public OverlayView mOverlayView;
@@ -59,11 +57,13 @@ public class NinjaBubbleMagic extends Service {
     public String mMapperJID;
     public String mMucJID;
 
-    public boolean mStreamStatusRequired = true;
     public JSONObject mSource;
     public JSONObject mStream;
     public JSONArray mParty;
     public JSONArray mMatchedGroups;
+
+    public JSONArray mLatlng;
+    public String mHashtags;
 
     private final static String ACTION_ONSTARTCOMMAND = "ACTION_ONSTARTCOMMAND";
     private final static String ACTION_ONDESTROY = "ACTION_ONDESTROY";
@@ -83,19 +83,9 @@ public class NinjaBubbleMagic extends Service {
                 check sensors (internet, gps, compass)
                  */
                 try {
-                    Thread.sleep(3000);
-
-                    mMatchedGroups = new JSONArray();
-                    JSONObject jsonObject = new JSONObject();
-                    jsonObject.put("hashtags", "#dilma13#aecionever#pt13");
-                    jsonObject.put("num_members", "3");
-                    JSONObject jsonObject1 = new JSONObject();
-                    mMatchedGroups.put(jsonObject);
-                    mMatchedGroups.put(jsonObject1);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                } catch (JSONException e) {
-                    e.printStackTrace();
+                    mLatlng = new JSONArray().put(0.1).put(0.1);
+                } catch (Exception e) {
+                    Log.e(TAG, "bad latlng");
                 }
 
                 /*
@@ -116,28 +106,32 @@ public class NinjaBubbleMagic extends Service {
 
                 try {
                     // Connect to XMPP server
-                    XMPPTCPConnectionConfiguration.Builder configBuilder = XMPPTCPConnectionConfiguration.builder();
-                    configBuilder.setUsernameAndPassword(mNick, mPWD);
-                    configBuilder.setServiceName(mDomain);
-                    configBuilder.setResource("device");
-                    configBuilder.setSecurityMode(ConnectionConfiguration.SecurityMode.disabled);
-
-                    mXmppConnection = new XMPPTCPConnection(configBuilder.build());
-                    mXmppConnection.connect();
-                    Log.i(TAG, "connected to XMPP server");
-                    mXmppConnection.login();
-                    Log.i(TAG, "logged into XMPP server");
-
                     mMapperChannel = new MapperChannel(NinjaBubbleMagic.this);
                     mPartyChannel = new PartyChannel(NinjaBubbleMagic.this);
 
                     // Check stream status
+                    mMapperChannel.connect();
                     mMapperChannel.streamStatus();
-                    Log.i(TAG, "streamStatus obtained");
+
+                    if (mStream != null && mStream.getString("status").equals("streaming")) {
+                        mMapperChannel.streamPause();
+                    }
+
+//                    if (mMedia.equals("Twitcasting") && (mSource.getString("twitcasting_id").isEmpty() || mSource.getString("twitcasting_id").equals(""))) {
+//                        mMapperChannel.updateTwitcastingId(mChannel);
+//                    }
+
+                    if (mSource.getString("twitcasting_id").equals("null")) {
+                        mMapperChannel.updateTwitcastingId(mChannel);
+                        mSource.put("twitcasting_id", mChannel);
+                    }
+
+                    mMapperChannel.disconnect();
 
                 } catch (Exception e) {
                     Intent intent = new Intent(getBaseContext(), MainActivity.class);
                     intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    intent.putExtra("flag", MainActivity.ERROR_WHILE_STARTING);
                     getApplication().startActivity(intent);
 
                     Log.e(TAG, "Error while establishing XMPPConnection", e);
@@ -164,13 +158,9 @@ public class NinjaBubbleMagic extends Service {
                 catch (Exception e) {
                     Log.w(TAG, "views were not added to windowmanager");
                 }
-                try {
-                    mXmppConnection.disconnect();
-                    Log.i(TAG, "XMPPConnection succesfully terminated");
-                }
-                catch  (Exception e) {
-                    Log.w(TAG, "XMPPConnection probably did not exist");
-                }
+
+                mPartyChannel.leave();
+                mMapperChannel.disconnect();
             }
         }
     }
@@ -181,8 +171,6 @@ public class NinjaBubbleMagic extends Service {
 
         super.onCreate();
 
-        mConcurrentHandler = new Handler();
-
         mHandlerThread = new HandlerThread("ServiceHandler",
                 android.os.Process.THREAD_PRIORITY_BACKGROUND);
         mHandlerThread.start();
@@ -190,6 +178,14 @@ public class NinjaBubbleMagic extends Service {
         // Get the HandlerThread's Looper and use it for our Handler
         mServiceLooper = mHandlerThread.getLooper();
         mServiceHandler = new ServiceHandler(mServiceLooper);
+
+        // Parallel looper
+//        mConcurrentHandler = new Handler();
+        mHandlerParallel = new HandlerThread("ParallelHandler",
+                android.os.Process.THREAD_PRIORITY_BACKGROUND);
+        mHandlerParallel.start();
+
+        mParallelLooper = mHandlerParallel.getLooper();
     }
 
     @Override
@@ -259,6 +255,8 @@ public class NinjaBubbleMagic extends Service {
     }
 
     public void runConcurrentThread(Runnable runnable) {
-        mConcurrentHandler.post(runnable);
+//        mConcurrentHandler.post(runnable);
+        Handler handler = new Handler(mParallelLooper);
+        handler.post(runnable);
     }
 }

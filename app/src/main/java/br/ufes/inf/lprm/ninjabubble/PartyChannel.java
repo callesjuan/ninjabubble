@@ -22,8 +22,13 @@ public class PartyChannel {
     }
 
     public void join(String group_jid) throws Exception {
+
+        leave();
+
+        String group_fulljid = String.format("%s@conference.%s", group_jid, mService.mDomain);
+
         MultiUserChatManager manager = MultiUserChatManager.getInstanceFor(mService.mXmppConnection);
-        mChat = manager.getMultiUserChat(group_jid);
+        mChat = manager.getMultiUserChat(group_fulljid);
 
         try {
             if (mChat.createOrJoin(mService.mStream.getString("jid"))) {
@@ -31,8 +36,19 @@ public class PartyChannel {
             }
         }
         catch (Exception e) {
-            Log.e(TAG, "trouble joining muc room", e);
+            Log.e(TAG, String.format("trouble joining muc room %s", group_fulljid), e);
             throw e;
+        }
+    }
+
+    public void leave() {
+        if(mChat != null) {
+            try {
+                mChat.leave();
+            }
+            catch (Exception e) {
+            }
+            mChat = null;
         }
     }
 }

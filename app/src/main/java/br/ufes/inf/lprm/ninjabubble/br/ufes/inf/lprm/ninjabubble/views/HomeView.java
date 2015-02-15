@@ -10,6 +10,7 @@ import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
 
@@ -39,212 +40,400 @@ public class HomeView extends ContentView {
     public long mLastLookup = 0;
     public final long LOOKUP_INTERVAL = 1000 * 30;
     public Dialog mLookupDialog;
+    private double mLookupRadius = 5.0;
 
     public HomeView(Context context, final OverlayView overlayView) {
         super(context, overlayView);
 
         Log.i(TAG, "created");
 
-        bStreamInit = new Button(getContext());
-        bStreamInit.setText(R.string.btn_stream_init);
-        bStreamInit.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                try {
-                    mOverlayView.mService.mMapperChannel.streamInit();
+        /**
+         * streamInit
+         */
+        {
+            bStreamInit = new Button(getContext());
+            bStreamInit.setText(R.string.btn_stream_init);
+            bStreamInit.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+                    builder.setTitle(R.string.btn_stream_init);
+                    builder.setMessage(R.string.alert_stream_init);
 
-                    bStreamInit.setVisibility(GONE);
-                    bStreamPause.setVisibility(VISIBLE);
-                    bStreamClose.setVisibility(VISIBLE);
+                    final EditText txtHashtags = new EditText(getContext());
+                    builder.setView(txtHashtags);
 
-                    bGroupLeave.setVisibility(VISIBLE);
-
-                    mOverlayView.enableMenu();
-                } catch (Exception e) {
-                    Log.e(TAG, "streamInit", e);
-                }
-            }
-        });
-        mContentLayout.addView(bStreamInit);
-
-        bStreamPause = new Button(getContext());
-        bStreamPause.setText(R.string.btn_stream_pause);
-        bStreamPause.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                try {
-                    mOverlayView.mService.mMapperChannel.streamPause();
-
-                    bStreamPause.setVisibility(GONE);
-                    bStreamResume.setVisibility(VISIBLE);
-
-                    bGroupMatch.setVisibility(GONE);
-                    bGroupLeave.setVisibility(GONE);
-
-                    mOverlayView.disableMenu();
-                } catch (Exception e) {
-                    Log.e(TAG, "streamPause", e);
-                }
-            }
-        });
-        mContentLayout.addView(bStreamPause);
-
-        bStreamResume = new Button(getContext());
-        bStreamResume.setText(R.string.btn_stream_resume);
-        bStreamResume.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                try {
-                    mOverlayView.mService.mMapperChannel.streamResume();
-
-                    bStreamPause.setVisibility(VISIBLE);
-                    bStreamResume.setVisibility(GONE);
-
-                    bGroupMatch.setVisibility(VISIBLE);
-                    bGroupLeave.setVisibility(VISIBLE);
-
-                    mOverlayView.enableMenu();
-                } catch (Exception e) {
-                    Log.e(TAG, "streamResume", e);
-                }
-            }
-        });
-        mContentLayout.addView(bStreamResume);
-
-        bStreamClose = new Button(getContext());
-        bStreamClose.setText(R.string.btn_stream_close);
-        bStreamClose.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                try {
-                    mOverlayView.mService.mMapperChannel.streamClose();
-
-                    bStreamInit.setVisibility(VISIBLE);
-                    bStreamPause.setVisibility(GONE);
-                    bStreamResume.setVisibility(GONE);
-                    bStreamClose.setVisibility(GONE);
-
-                    bGroupMatch.setVisibility(VISIBLE);
-                    bGroupLeave.setVisibility(GONE);
-
-                    mOverlayView.enableMenu();
-                } catch (Exception e) {
-                    Log.e(TAG, "streamClose", e);
-                }
-            }
-        });
-        mContentLayout.addView(bStreamClose);
-
-        bGroupMatch = new Button(getContext());
-        bGroupMatch.setText(R.string.btn_group_match);
-        bGroupMatch.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                showLoading();
-                mOverlayView.mService.runConcurrentThread(new Runnable() {
-                    @Override
-                    public void run() {
-
-                        boolean msgError = false;
-                        boolean jsonError = false;
-
-                        if (System.currentTimeMillis() - mLastLookup > LOOKUP_INTERVAL) {
-
-                            try {
-                                mOverlayView.mService.mMapperChannel.groupMatch(5);
-                                mLastLookup = System.currentTimeMillis();
-                            } catch (Exception e) {
-                                Log.e(TAG, "groupMatch", e);
-                                Toast.makeText(getContext(), R.string.error_groupmatch, Toast.LENGTH_SHORT).show();
+                    builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            if (txtHashtags.getText().toString().isEmpty()) {
+                                Toast.makeText(getContext(), R.string.error_streaminit_hashtags, Toast.LENGTH_SHORT);
+                                return;
                             }
-                        }
 
-                        if (!msgError) {
-                            JSONArray matchedGroups = mOverlayView.mService.mMatchedGroups;
-                            if (matchedGroups != null && matchedGroups.length() > 0) {
-                                ListView modeList = new ListView(getContext());
-                                String[] stringArray = new String[matchedGroups.length()];
-                                for (int i = 0; i < matchedGroups.length(); i++) {
+                            mOverlayView.mService.mHashtags = txtHashtags.getText().toString();
+
+                            showLoading();
+                            mOverlayView.mService.runConcurrentThread(new Runnable() {
+                                @Override
+                                public void run() {
                                     try {
-                                        JSONObject group = matchedGroups.getJSONObject(i);
-                                        String hashtags = group.getString("hashtags");
-                                        String numMembers = group.getString("num_members");
-                                        stringArray[i] = String.format("%s (%s)", hashtags, numMembers);
+                                        mOverlayView.mService.mMapperChannel.connect();
+
+                                        mOverlayView.mService.mMapperChannel.streamInit(mOverlayView.mService.mMedia, null);
+
+                                        try {
+                                            mOverlayView.mService.mPartyChannel.join(mOverlayView.mService.mStream.getString("group_jid"));
+                                        } catch (Exception e) {
+                                            Log.e(TAG, "streamInit", e);
+                                            Toast.makeText(getContext(), R.string.error_groupjoin, Toast.LENGTH_SHORT).show();
+                                        }
+
+                                        mOverlayView.mService.runOnUiThread(new Runnable() {
+                                            @Override
+                                            public void run() {
+                                                mOverlayView.enableMenu();
+
+                                                bStreamInit.setVisibility(GONE);
+                                                bStreamPause.setVisibility(VISIBLE);
+                                                bStreamClose.setVisibility(VISIBLE);
+
+                                                bGroupLeave.setVisibility(VISIBLE);
+
+                                                mOverlayView.imHome.setImageBitmap(mOverlayView.mBmpOn);
+
+                                                showLoaded();
+                                            }
+                                        });
                                     } catch (Exception e) {
-                                        Log.e(TAG, "groupMatch", e);
-                                        Toast.makeText(getContext(), R.string.error_groupmatch, Toast.LENGTH_SHORT).show();
-                                        jsonError = true;
-                                        break;
+                                        Log.e(TAG, "streamInit", e);
+                                        Toast.makeText(getContext(), R.string.error_streaminit, Toast.LENGTH_SHORT).show();
+                                        mOverlayView.mService.mMapperChannel.disconnect();
+                                        mOverlayView.mService.runOnUiThread(new Runnable() {
+                                            @Override
+                                            public void run() {
+                                                showLoaded();
+                                            }
+                                        });
                                     }
                                 }
-                                if (!jsonError) {
-                                    AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-                                    builder.setTitle(R.string.alert_matched_groups);
+                            });
+                        }
+                    });
+                    builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            return;
+                        }
+                    });
 
-                                    ArrayAdapter<String> modeAdapter = new ArrayAdapter<String>(getContext(), android.R.layout.simple_list_item_1, android.R.id.text1, stringArray);
-                                    modeList.setAdapter(modeAdapter);
-                                    modeList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                                        @Override
-                                        public void onItemClick(AdapterView<?> parent, View view, final int position, long id) {
-                                            AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
-                                            builder.setTitle(R.string.alert_group_join);
-                                            builder.setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
-                                                @Override
-                                                public void onClick(DialogInterface dialog, int which) {
-                                                    // group_init OR group_join
-                                                    Log.i(TAG, String.format("list index is %d", position));
-                                                    mLookupDialog.dismiss();
-                                                }
-                                            });
-                                            builder.setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
-                                                @Override
-                                                public void onClick(DialogInterface dialog, int which) {
-                                                    Log.i(TAG, String.format("cancel", position));
-                                                }
-                                            });
-                                            Dialog dialog = builder.create();
-                                            dialog.getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);
-                                            dialog.show();
-                                        }
-                                    });
-                                    builder.setView(modeList);
+                    Dialog dialog = builder.create();
+                    dialog.getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);
+                    dialog.show();
+                }
+            });
+            mContentLayout.addView(bStreamInit);
+        }
 
-                                    mLookupDialog = builder.create();
-                                    mLookupDialog.getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);
-                                    mLookupDialog.show();
-                                }
-                            } else {
-                                Toast.makeText(getContext(), R.string.error_groupmatch_empty, Toast.LENGTH_SHORT).show();
+        /**
+         * streamPause
+         */
+        {
+            bStreamPause = new Button(getContext());
+            bStreamPause.setText(R.string.btn_stream_pause);
+            bStreamPause.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    showLoading();
+                    mOverlayView.mService.runConcurrentThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                mOverlayView.mService.mMapperChannel.streamPause();
+                                mOverlayView.mService.mPartyChannel.leave();
+                                mOverlayView.mService.mMapperChannel.disconnect();
+
+                                mOverlayView.mService.runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        mOverlayView.disableMenu();
+
+                                        bStreamPause.setVisibility(GONE);
+                                        bStreamResume.setVisibility(VISIBLE);
+
+                                        bGroupMatch.setVisibility(GONE);
+                                        bGroupLeave.setVisibility(GONE);
+
+                                        mOverlayView.imHome.setImageBitmap(mOverlayView.mBmpOff);
+
+                                        showLoaded();
+                                    }
+                                });
+                            } catch (Exception e) {
+                                Log.e(TAG, "streamPause", e);
+                                Toast.makeText(getContext(), R.string.error_streampause, Toast.LENGTH_SHORT).show();
+                                mOverlayView.mService.runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        showLoaded();
+                                    }
+                                });
                             }
                         }
-
-                        mOverlayView.mService.runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                showLoaded();
-                            }
-                        });
-                    }
-                });
-            }
-        });
-        mContentLayout.addView(bGroupMatch);
-
-        bGroupLeave = new Button(getContext());
-        bGroupLeave.setText(R.string.btn_group_leave);
-        bGroupLeave.setOnClickListener(new OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                try {
-
-                } catch (Exception e) {
-                    Log.e(TAG, "groupLeave", e);
+                    });
                 }
-            }
-        });
-        mContentLayout.addView(bGroupLeave);
+            });
+            mContentLayout.addView(bStreamPause);
+        }
 
-        if (mOverlayView.mService.mStream.has("stream_id")) {
+        /**
+         * streamResume
+         */
+        {
+            bStreamResume = new Button(getContext());
+            bStreamResume.setText(R.string.btn_stream_resume);
+            bStreamResume.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    showLoading();
+                    mOverlayView.mService.runConcurrentThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                mOverlayView.mService.mMapperChannel.connect();
+                                mOverlayView.mService.mMapperChannel.streamStatus();
+                                mOverlayView.mService.mMapperChannel.streamResume();
+
+                                try {
+                                    mOverlayView.mService.mPartyChannel.join(mOverlayView.mService.mStream.getString("group_jid"));
+                                } catch (Exception e) {
+                                    Log.e(TAG, "streamResume", e);
+                                    Toast.makeText(getContext(), R.string.error_groupjoin, Toast.LENGTH_SHORT).show();
+                                }
+
+                                mOverlayView.mService.runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        mOverlayView.enableMenu();
+
+                                        bStreamPause.setVisibility(VISIBLE);
+                                        bStreamResume.setVisibility(GONE);
+
+                                        bGroupMatch.setVisibility(VISIBLE);
+                                        bGroupLeave.setVisibility(VISIBLE);
+
+                                        mOverlayView.imHome.setImageBitmap(mOverlayView.mBmpOn);
+
+                                        showLoaded();
+                                    }
+                                });
+                            } catch (Exception e) {
+                                Log.e(TAG, "streamResume", e);
+                                Toast.makeText(getContext(), R.string.error_streamresume, Toast.LENGTH_SHORT).show();
+                                mOverlayView.mService.mMapperChannel.disconnect();
+                                mOverlayView.mService.runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        showLoaded();
+                                    }
+                                });
+                            }
+                        }
+                    });
+                }
+            });
+            mContentLayout.addView(bStreamResume);
+        }
+
+        /**
+         * streamClose
+         */
+        {
+            bStreamClose = new Button(getContext());
+            bStreamClose.setText(R.string.btn_stream_close);
+            bStreamClose.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    showLoading();
+                    mOverlayView.mService.runConcurrentThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                if(mOverlayView.mService.mStream.getString("status").equals("paused")) {
+                                    mOverlayView.mService.mMapperChannel.connect();
+                                }
+
+                                mOverlayView.mService.mMapperChannel.streamClose();
+                                mOverlayView.mService.mPartyChannel.leave();
+                                mOverlayView.mService.mMapperChannel.disconnect();
+
+                                mOverlayView.mService.runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        mOverlayView.disableMenu();
+
+                                        bStreamInit.setVisibility(VISIBLE);
+                                        bStreamPause.setVisibility(GONE);
+                                        bStreamResume.setVisibility(GONE);
+                                        bStreamClose.setVisibility(GONE);
+
+                                        bGroupMatch.setVisibility(VISIBLE);
+                                        bGroupLeave.setVisibility(GONE);
+
+                                        mOverlayView.imHome.setImageBitmap(mOverlayView.mBmpOff);
+
+                                        showLoaded();
+                                    }
+                                });
+                            } catch (Exception e) {
+                                Log.e(TAG, "streamClose", e);
+                                Toast.makeText(getContext(), R.string.error_streamclose, Toast.LENGTH_SHORT).show();
+                                mOverlayView.mService.runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        showLoaded();
+                                    }
+                                });
+                            }
+                        }
+                    });
+                }
+            });
+            mContentLayout.addView(bStreamClose);
+        }
+
+        /**
+         * groupMatch
+         */
+        {
+            bGroupMatch = new Button(getContext());
+            bGroupMatch.setText(R.string.btn_group_match);
+            bGroupMatch.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    showLoading();
+                    mOverlayView.mService.runConcurrentThread(new Runnable() {
+                        @Override
+                        public void run() {
+
+                            boolean msgError = false;
+                            boolean jsonError = false;
+
+                            if (System.currentTimeMillis() - mLastLookup > LOOKUP_INTERVAL) {
+
+                                try {
+                                    if (mOverlayView.mService.mStream != null) {
+                                        mOverlayView.mService.mMapperChannel.groupMatch(mLookupRadius);
+                                    }
+                                    else {
+                                        mOverlayView.mService.mMapperChannel.connect();
+                                        mOverlayView.mService.mMapperChannel.groupMatch(mLookupRadius);
+                                        mOverlayView.mService.mMapperChannel.disconnect();
+                                    }
+                                    mLastLookup = System.currentTimeMillis();
+                                } catch (Exception e) {
+                                    Log.e(TAG, "groupMatch", e);
+                                    Toast.makeText(getContext(), R.string.error_groupmatch, Toast.LENGTH_SHORT).show();
+                                }
+                            }
+
+                            if (!msgError) {
+                                JSONArray matchedGroups = mOverlayView.mService.mMatchedGroups;
+                                if (matchedGroups != null && matchedGroups.length() > 0) {
+                                    ListView modeList = new ListView(getContext());
+                                    String[] stringArray = new String[matchedGroups.length()];
+                                    for (int i = 0; i < matchedGroups.length(); i++) {
+                                        try {
+                                            JSONObject group = matchedGroups.getJSONObject(i);
+                                            String hashtags = group.getString("hashtags");
+                                            String numMembers = group.getString("num_members");
+                                            stringArray[i] = String.format("%s (%s)", hashtags, numMembers);
+                                        } catch (Exception e) {
+                                            Log.e(TAG, "groupMatch", e);
+                                            Toast.makeText(getContext(), R.string.error_groupmatch, Toast.LENGTH_SHORT).show();
+                                            jsonError = true;
+                                            break;
+                                        }
+                                    }
+                                    if (!jsonError) {
+                                        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+                                        builder.setTitle(R.string.alert_matched_groups);
+
+                                        ArrayAdapter<String> modeAdapter = new ArrayAdapter<String>(getContext(), android.R.layout.simple_list_item_1, android.R.id.text1, stringArray);
+                                        modeList.setAdapter(modeAdapter);
+                                        modeList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                                            @Override
+                                            public void onItemClick(AdapterView<?> parent, View view, final int position, long id) {
+                                                AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+                                                builder.setTitle(R.string.alert_group_join);
+                                                builder.setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                                                    @Override
+                                                    public void onClick(DialogInterface dialog, int which) {
+                                                        // stream_init OR group_join
+                                                        Log.i(TAG, String.format("list index is %d", position));
+                                                        mLookupDialog.dismiss();
+                                                        if (mOverlayView.mService.mStream != null) {
+                                                            // group_join
+                                                        } else {
+                                                            // stream_init
+                                                        }
+                                                    }
+                                                });
+                                                builder.setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
+                                                    @Override
+                                                    public void onClick(DialogInterface dialog, int which) {
+                                                        Log.i(TAG, String.format("cancel", position));
+                                                    }
+                                                });
+                                                Dialog dialog = builder.create();
+                                                dialog.getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);
+                                                dialog.show();
+                                            }
+                                        });
+                                        builder.setView(modeList);
+
+                                        mLookupDialog = builder.create();
+                                        mLookupDialog.getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);
+                                        mLookupDialog.show();
+                                    }
+                                } else {
+                                    Toast.makeText(getContext(), R.string.error_groupmatch_empty, Toast.LENGTH_SHORT).show();
+                                }
+                            }
+
+                            mOverlayView.mService.runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    showLoaded();
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+            mContentLayout.addView(bGroupMatch);
+        }
+
+        /**
+         * groupLeave
+         */
+        {
+            bGroupLeave = new Button(getContext());
+            bGroupLeave.setText(R.string.btn_group_leave);
+            bGroupLeave.setOnClickListener(new OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    try {
+
+                    } catch (Exception e) {
+                        Log.e(TAG, "groupLeave", e);
+                    }
+                }
+            });
+            mContentLayout.addView(bGroupLeave);
+        }
+
+        if (mOverlayView.mService.mStream != null) {
             bStreamInit.setVisibility(GONE);
             bStreamPause.setVisibility(GONE);
             bStreamResume.setVisibility(VISIBLE);
