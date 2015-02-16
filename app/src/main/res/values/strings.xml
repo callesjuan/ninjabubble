@@ -23,18 +23,25 @@
     <string name="btn_stream_resume">Resume stream</string>
     <string name="btn_stream_close">Close stream</string>
     <string name="btn_cancel">Cancel</string>
+    <string name="loading">Loading...</string>
     <string name="alert_matched_groups">Matched groups</string>
     <string name="alert_group_join">Confirm join\?</string>
-    <string name="loading">Loading...</string>
+    <string name="alert_group_leave">Confirm leave\?</string>
     <string name="alert_stream_init">Provide hashtags</string>
+    <string name="alert_stream_close">Confirm close?</string>
+    <string name="success_groupleave">Left group successfully</string>
+    <string name="success_groupjoin">Joined group successfully</string>
     <string name="error_streaminit">Could not initiate stream</string>
     <string name="error_streaminit_hashtags">Hashtags must be provided</string>
     <string name="error_streampause">Could not pause stream</string>
     <string name="error_streamresume">Could not resume stream</string>
     <string name="error_streamclose">Could not close stream</string>
     <string name="error_groupjoin">Could not join group, messaging won\'t be available</string>
+    <string name="error_groupleave">Could not leave group</string>
     <string name="error_groupmatch">Error while finding groups</string>
     <string name="error_groupmatch_empty">No found groups</string>
+    <string name="error_connection">Connection was lost, stream automatically paused</string>
+    <string name="error_reconnection">Could not automatically resume stream, do it manually</string>
 
     <string-array name="spin_media">
         <item>Twitcasting</item>

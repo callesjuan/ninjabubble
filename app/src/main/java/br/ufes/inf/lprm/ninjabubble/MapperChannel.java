@@ -1,18 +1,21 @@
 package br.ufes.inf.lprm.ninjabubble;
 
-import android.app.Service;
-import android.content.Intent;
 import android.util.Log;
+import android.view.View;
+import android.widget.Toast;
 
 import org.jivesoftware.smack.ConnectionConfiguration;
+import org.jivesoftware.smack.ConnectionListener;
+import org.jivesoftware.smack.ReconnectionManager;
+import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.chat.Chat;
 import org.jivesoftware.smack.chat.ChatManager;
 import org.jivesoftware.smack.chat.ChatMessageListener;
 import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.tcp.XMPPTCPConnection;
 import org.jivesoftware.smack.tcp.XMPPTCPConnectionConfiguration;
+import org.json.JSONArray;
 import org.json.JSONObject;
-import org.json.JSONStringer;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -42,6 +45,14 @@ public class MapperChannel implements ChatMessageListener {
     public void connect() throws Exception {
         try {
             // Connect to XMPP server
+
+//            AndroidSmackInitializer androidSmackInitializer = new AndroidSmackInitializer();
+//            androidSmackInitializer.initialize();
+//            TCPInitializer tcpInitializer = new TCPInitializer();
+//            tcpInitializer.initialize();
+//            ExtensionsInitializer extensionsInitializer= new ExtensionsInitializer();
+//            extensionsInitializer.initialize();
+
             XMPPTCPConnectionConfiguration.Builder configBuilder = XMPPTCPConnectionConfiguration.builder();
             configBuilder.setUsernameAndPassword(mService.mNick, mService.mPWD);
             configBuilder.setServiceName(mService.mDomain);
@@ -49,9 +60,15 @@ public class MapperChannel implements ChatMessageListener {
             configBuilder.setSecurityMode(ConnectionConfiguration.SecurityMode.disabled);
 
             mService.mXmppConnection = new XMPPTCPConnection(configBuilder.build());
+
+            ReconnectionManager.getInstanceFor(mService.mXmppConnection).enableAutomaticReconnection();
+            mService.mXmppConnection.addConnectionListener(new MyConnectionListener());
+
             mService.mXmppConnection.connect();
             mService.mXmppConnection.login();
             Log.i(TAG, "logged into XMPP server");
+
+            Log.i(TAG, String.format("reconnection enabled: %s", ReconnectionManager.getInstanceFor(mService.mXmppConnection).isAutomaticReconnectEnabled()));
 
             ChatManager chatManager = ChatManager.getInstanceFor(mService.mXmppConnection);
             mChat = chatManager.createChat(mService.mMapperJID, this);
@@ -109,25 +126,48 @@ public class MapperChannel implements ChatMessageListener {
             JSONObject args = parsed.getJSONObject("args");
             args.put("from", message.getFrom());
             args.put("to", message.getTo());
-            if (parsed.getString("func").equals("stream_status_reply")) {
+            if (parsed.getString("func").equals("message_exception_reply")) {
+                messageExceptionReply(args);
+            }
+            else if (parsed.getString("func").equals("stream_status_reply")) {
                 streamStatusReply(args);
             }
-            if (parsed.getString("func").equals("stream_init_reply")) {
+            else if (parsed.getString("func").equals("stream_init_reply")) {
                 streamInitReply(args);
             }
-            if (parsed.getString("func").equals("stream_pause_reply")) {
+            else if (parsed.getString("func").equals("stream_pause_reply")) {
                 streamPauseReply(args);
             }
-            if (parsed.getString("func").equals("stream_resume_reply")) {
+            else if (parsed.getString("func").equals("stream_resume_reply")) {
                 streamResumeReply(args);
             }
-            if (parsed.getString("func").equals("stream_close_reply")) {
+            else if (parsed.getString("func").equals("stream_close_reply")) {
                 streamCloseReply(args);
+            }
+            else if (parsed.getString("func").equals("group_match_reply")) {
+                groupMatchReply(args);
+            }
+            else if (parsed.getString("func").equals("group_join_reply")) {
+                groupJoinReply(args);
+            }
+            else if (parsed.getString("func").equals("group_leave_reply")) {
+                groupLeaveReply(args);
+            }
+            else if (parsed.getString("func").equals("group_fetch_members_reply")) {
+                groupFetchMembersReply(args);
             }
         }
         catch (Exception e) {
             Log.e(TAG, e.getMessage(), e);
         }
+    }
+
+    public void messageExceptionReply (JSONObject args) {
+        Log.e(TAG, "messageExceptionReply");
+        try {
+            Log.e(TAG, args.get("exception").toString());
+        } catch (Exception e) {}
+        unlock(true);
     }
 
     /**
@@ -153,10 +193,10 @@ public class MapperChannel implements ChatMessageListener {
     }
 
     public void streamStatusReply(JSONObject args) {
+        if (!mWaitingReply) {
+            return;
+        }
         try {
-            if (!mWaitingReply) {
-                return;
-            }
 
             Log.i(TAG, "streamStatusReply");
             Log.i(TAG, args.toString());
@@ -181,7 +221,6 @@ public class MapperChannel implements ChatMessageListener {
 
         try {
             Date now = new Date();
-            SimpleDateFormat dateFormat = new SimpleDateFormat(DATE_PATTERN);
             SimpleDateFormat stampFormat = new SimpleDateFormat(STAMP_PATTERN);
 
             String streamId = mService.mNick + "__" + stampFormat.format(now);
@@ -214,6 +253,9 @@ public class MapperChannel implements ChatMessageListener {
     }
 
     public void streamInitReply(JSONObject args) {
+        if (!mWaitingReply) {
+            return;
+        }
         try {
             mService.mStream = args.getJSONObject("stream");
             unlock();
@@ -250,6 +292,9 @@ public class MapperChannel implements ChatMessageListener {
     }
 
     public void streamPauseReply(JSONObject args) {
+        if (!mWaitingReply) {
+            return;
+        }
         try {
             mService.mStream = args.getJSONObject("stream");
             unlock();
@@ -286,6 +331,9 @@ public class MapperChannel implements ChatMessageListener {
     }
 
     public void streamResumeReply(JSONObject args) {
+        if (!mWaitingReply) {
+            return;
+        }
         try {
             mService.mStream = args.getJSONObject("stream");
             unlock();
@@ -322,6 +370,9 @@ public class MapperChannel implements ChatMessageListener {
     }
 
     public void streamCloseReply(JSONObject args) {
+        if (!mWaitingReply) {
+            return;
+        }
         try {
             if (args.has("stream")) {
                 mService.mStream = null;
@@ -349,8 +400,7 @@ public class MapperChannel implements ChatMessageListener {
                 .put("func", "update_twitcasting_id")
                 .put("args", new JSONObject()
                     .put("twitcasting_id", twitcastingId)
-                )
-            ;
+                );
 
             Log.i(TAG, msg.toString());
             mChat.sendMessage(msg.toString());
@@ -362,19 +412,393 @@ public class MapperChannel implements ChatMessageListener {
     }
 
     /**
-     * groupMatch
+     * updateLatlng
      */
-    public void groupMatch (double radius) {
-        Log.i(TAG, "groupMatch");
+    public void updateLatlng(JSONArray latlng) throws Exception {
+        Log.i(TAG, "updateLatlng");
 
         try {
-            Thread.sleep(3000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+
+            JSONObject msg = new JSONObject()
+                .put("func", "update_latlng")
+                .put("args", new JSONObject()
+                    .put("stream_id", mService.mStream.getString("stream_id"))
+                    .put("latlng", latlng)
+                );
+
+            Log.i(TAG, msg.toString());
+            mChat.sendMessage(msg.toString());
+        }
+        catch (Exception e) {
+            Log.e(TAG, "updateLatlng", e);
+            throw e;
         }
     }
 
-    public void groupMatchReply() {
+    /**
+     * updateHashtags
+     */
+    public void updateHashtags(String hashtags) throws Exception {
+        Log.i(TAG, "updateHashtags");
 
+        try {
+
+            JSONObject msg = new JSONObject()
+                    .put("func", "update_hashtags")
+                    .put("args", new JSONObject()
+                                    .put("stream_id", mService.mStream.getString("stream_id"))
+                                    .put("hashtags", hashtags)
+                    );
+
+            Log.i(TAG, msg.toString());
+            mChat.sendMessage(msg.toString());
+        }
+        catch (Exception e) {
+            Log.e(TAG, "updateHashtags", e);
+            throw e;
+        }
+    }
+
+    /**
+     * updateDeviceStatus
+     */
+    public void updateDeviceStatus(String status) throws Exception {
+        Log.i(TAG, "updateDeviceStatus");
+
+        try {
+
+            JSONObject msg = new JSONObject()
+                    .put("func", "update_device_status")
+                    .put("args", new JSONObject()
+                                    .put("stream_id", mService.mStream.getString("stream_id"))
+                                    .put("device_status", status)
+                    );
+
+            Log.i(TAG, msg.toString());
+            mChat.sendMessage(msg.toString());
+        }
+        catch (Exception e) {
+            Log.e(TAG, "updateDeviceStatus", e);
+            throw e;
+        }
+    }
+
+    /**
+     * updateGeneralStatus
+     */
+    public void updateGeneralStatus(String status) throws Exception {
+        Log.i(TAG, "updateGeneralStatus");
+
+        try {
+
+            JSONObject msg = new JSONObject()
+                    .put("func", "update_general_status")
+                    .put("args", new JSONObject()
+                                    .put("stream_id", mService.mStream.getString("stream_id"))
+                                    .put("general_status", status)
+                    );
+
+            Log.i(TAG, msg.toString());
+            mChat.sendMessage(msg.toString());
+        }
+        catch (Exception e) {
+            Log.e(TAG, "updateGeneralStatus", e);
+            throw e;
+        }
+    }
+
+    /**
+     * groupMatch
+     */
+    public void groupMatch (double radius, String groupJid) throws Exception {
+        Log.i(TAG, "groupMatch");
+
+        try {
+            JSONObject msg;
+
+            if (groupJid != null) {
+                msg = new JSONObject()
+                    .put("func", "group_match")
+                    .put("args", new JSONObject()
+                        .put("hashtags", mService.mHashtags)
+                        .put("latlng", mService.mLatlng)
+                        .put("radius", radius)
+                        .put("group_jid", groupJid)
+                    );
+            } else {
+                msg = new JSONObject()
+                    .put("func", "group_match")
+                    .put("args", new JSONObject()
+                        .put("hashtags", mService.mHashtags)
+                        .put("latlng", mService.mLatlng)
+                        .put("radius", radius)
+                );
+            }
+
+
+            Log.i(TAG, msg.toString());
+            mChat.sendMessage(msg.toString());
+
+            lock();
+        } catch (Exception e) {
+            Log.e(TAG, "groupMatch", e);
+            throw e;
+        }
+    }
+
+    public void groupMatchReply(JSONObject args) {
+        if (!mWaitingReply) {
+            return;
+        }
+        try {
+            mService.mMatchedGroups = args.getJSONArray("matched_groups");
+            unlock();
+        }
+        catch (Exception e) {
+            Log.e(TAG, "groupMatchReply", e);
+            unlock(true);
+        }
+    }
+
+    /**
+     * groupJoin
+     */
+    public void groupJoin (String groupJid) throws Exception {
+        Log.i(TAG, "groupJoin");
+
+        try {
+            JSONObject msg = new JSONObject()
+                .put("func", "group_join")
+                .put("args", new JSONObject()
+                    .put("stream_id", mService.mStream.getString("stream_id"))
+                    .put("group_jid", groupJid)
+                );
+
+            Log.i(TAG, msg.toString());
+            mChat.sendMessage(msg.toString());
+
+            lock();
+        } catch (Exception e) {
+            Log.e(TAG, "groupJoin", e);
+            throw e;
+        }
+    }
+
+    public void groupJoinReply(JSONObject args) {
+        if (!mWaitingReply) {
+            return;
+        }
+        try {
+            mService.mStream = args.getJSONObject("stream");
+            mService.mParty = args.getJSONArray("members");
+            unlock();
+        }
+        catch (Exception e) {
+            Log.e(TAG, "groupJoinReply", e);
+            unlock(true);
+        }
+    }
+
+    /**
+     * groupLeave
+     */
+    public void groupLeave () throws Exception {
+        Log.i(TAG, "groupLeave");
+
+        try {
+            Date now = new Date();
+            SimpleDateFormat stampFormat = new SimpleDateFormat(STAMP_PATTERN);
+
+            String groupJid = mService.mStream.getString("stream_id") + "__" + stampFormat.format(now);
+
+            JSONObject msg = new JSONObject()
+                .put("func", "group_leave")
+                .put("args", new JSONObject()
+                                .put("stream_id", mService.mStream.getString("stream_id"))
+                                .put("group_jid", groupJid)
+                );
+
+            Log.i(TAG, msg.toString());
+            mChat.sendMessage(msg.toString());
+
+            lock();
+        } catch (Exception e) {
+            Log.e(TAG, "groupLeave", e);
+            throw e;
+        }
+    }
+
+    public void groupLeaveReply(JSONObject args) {
+        if (!mWaitingReply) {
+            return;
+        }
+        try {
+            mService.mStream = args.getJSONObject("stream");
+            mService.mParty = null;
+            unlock();
+        }
+        catch (Exception e) {
+            Log.e(TAG, "groupLeaveReply", e);
+            unlock(true);
+        }
+    }
+
+    /**
+     * groupFetchMembers
+     */
+    public void groupFetchMembers () throws Exception {
+        Log.i(TAG, "groupFetchMembers");
+
+        try {
+            JSONObject msg = new JSONObject()
+                .put("func", "group_fetch_members")
+                .put("args", new JSONObject()
+                                .put("stream_id", mService.mStream.getString("stream_id"))
+                                .put("group_jid", mService.mStream.getString("group_jid"))
+                );
+
+            Log.i(TAG, msg.toString());
+            mChat.sendMessage(msg.toString());
+
+            lock();
+        } catch (Exception e) {
+            Log.e(TAG, "groupFetchMembers", e);
+            throw e;
+        }
+    }
+
+    public void groupFetchMembersReply(JSONObject args) {
+        if (!mWaitingReply) {
+            return;
+        }
+        try {
+            mService.mParty = args.getJSONArray("members");
+            unlock();
+        }
+        catch (Exception e) {
+            Log.e(TAG, "groupFetchMembersReply", e);
+            unlock(true);
+        }
+    }
+
+    public class MyConnectionListener implements ConnectionListener {
+
+        @Override
+        public void connected(XMPPConnection connection) {
+        }
+
+        @Override
+        public void authenticated(XMPPConnection connection, boolean resumed) {
+        }
+
+        @Override
+        public void connectionClosed() {
+        }
+
+        @Override
+        public void connectionClosedOnError(Exception e) {
+            Log.e(TAG, "connectionClosedOnError");
+
+            String status;
+            try {
+                status = mService.mStream.getString("status");
+            } catch (Exception f) {
+                return;
+            }
+
+            if (status.equals("streaming")) {
+                mService.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        mService.mOverlayView.vHome.showLoading();
+
+                        try {
+                            mService.mStream.put("status", "paused");
+                        } catch (Exception e) {
+                            mService.mOverlayView.vHome.showLoaded();
+                            return;
+                        }
+
+                        mService.mOverlayView.disableMenu();
+
+                        mService.mOverlayView.vHome.bStreamPause.setVisibility(View.GONE);
+                        mService.mOverlayView.vHome.bStreamResume.setVisibility(View.VISIBLE);
+
+                        mService.mOverlayView.vHome.bGroupMatch.setVisibility(View.GONE);
+                        mService.mOverlayView.vHome.bGroupLeave.setVisibility(View.GONE);
+
+                        mService.mOverlayView.vHome.mOverlayView.imHome.setImageBitmap(mService.mOverlayView.mBmpOff);
+
+                        Toast.makeText(mService, R.string.error_connection, Toast.LENGTH_SHORT);
+                        mService.mOverlayView.vHome.showLoaded();
+                    }
+                });
+            }
+        }
+
+        @Override
+        public void reconnectionSuccessful() {
+            Log.i(TAG, "reconnectionSuccessful");
+            String status;
+            try {
+                status = mService.mStream.getString("status");
+                Log.i(TAG, String.format("stream_status = %s", status));
+            } catch (Exception f) {
+                return;
+            }
+
+            if (status.equals("paused")) {
+                mService.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        mService.mOverlayView.vHome.showLoading();
+                    }
+                });
+                try {
+                    streamStatus();
+                    streamResume();
+
+                    try {
+                        mService.mPartyChannel.join(mService.mStream.getString("group_jid"));
+                    } catch (Exception e) {
+                        Log.e(TAG, "streamResume", e);
+                        Toast.makeText(mService, R.string.error_groupjoin, Toast.LENGTH_SHORT).show();
+                    }
+
+                    mService.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            mService.mOverlayView.enableMenu();
+
+                            mService.mOverlayView.vHome.bStreamPause.setVisibility(View.VISIBLE);
+                            mService.mOverlayView.vHome.bStreamResume.setVisibility(View.GONE);
+
+                            mService.mOverlayView.vHome.bGroupMatch.setVisibility(View.VISIBLE);
+                            mService.mOverlayView.vHome.bGroupLeave.setVisibility(View.VISIBLE);
+
+                            mService.mOverlayView.imHome.setImageBitmap(mService.mOverlayView.mBmpOn);
+
+                            mService.mOverlayView.vHome.showLoaded();
+                        }
+                    });
+                } catch (Exception e) {
+                    mService.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Toast.makeText(mService, R.string.error_reconnection, Toast.LENGTH_SHORT);
+                            mService.mOverlayView.vHome.showLoaded();
+                        }
+                    });
+                }
+            }
+        }
+
+        @Override
+        public void reconnectingIn(int seconds) {
+        }
+
+        @Override
+        public void reconnectionFailed(Exception e) {
+        }
     }
 }

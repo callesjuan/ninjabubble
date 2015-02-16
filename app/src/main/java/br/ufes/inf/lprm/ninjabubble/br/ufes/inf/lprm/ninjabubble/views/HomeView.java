@@ -254,49 +254,64 @@ public class HomeView extends ContentView {
             bStreamClose.setOnClickListener(new OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    showLoading();
-                    mOverlayView.mService.runConcurrentThread(new Runnable() {
+                    AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+                    builder.setTitle(R.string.alert_stream_close);
+                    builder.setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
                         @Override
-                        public void run() {
-                            try {
-                                if(mOverlayView.mService.mStream.getString("status").equals("paused")) {
-                                    mOverlayView.mService.mMapperChannel.connect();
+                        public void onClick(DialogInterface dialog, int which) {
+                            showLoading();
+                            mOverlayView.mService.runConcurrentThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    try {
+                                        if(mOverlayView.mService.mStream.getString("status").equals("paused")) {
+                                            mOverlayView.mService.mMapperChannel.connect();
+                                        }
+
+                                        mOverlayView.mService.mMapperChannel.streamClose();
+                                        mOverlayView.mService.mPartyChannel.leave();
+                                        mOverlayView.mService.mMapperChannel.disconnect();
+
+                                        mOverlayView.mService.runOnUiThread(new Runnable() {
+                                            @Override
+                                            public void run() {
+                                                mOverlayView.disableMenu();
+
+                                                bStreamInit.setVisibility(VISIBLE);
+                                                bStreamPause.setVisibility(GONE);
+                                                bStreamResume.setVisibility(GONE);
+                                                bStreamClose.setVisibility(GONE);
+
+                                                bGroupMatch.setVisibility(VISIBLE);
+                                                bGroupLeave.setVisibility(GONE);
+
+                                                mOverlayView.imHome.setImageBitmap(mOverlayView.mBmpOff);
+
+                                                showLoaded();
+                                            }
+                                        });
+                                    } catch (Exception e) {
+                                        Log.e(TAG, "streamClose", e);
+                                        Toast.makeText(getContext(), R.string.error_streamclose, Toast.LENGTH_SHORT).show();
+                                        mOverlayView.mService.runOnUiThread(new Runnable() {
+                                            @Override
+                                            public void run() {
+                                                showLoaded();
+                                            }
+                                        });
+                                    }
                                 }
-
-                                mOverlayView.mService.mMapperChannel.streamClose();
-                                mOverlayView.mService.mPartyChannel.leave();
-                                mOverlayView.mService.mMapperChannel.disconnect();
-
-                                mOverlayView.mService.runOnUiThread(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        mOverlayView.disableMenu();
-
-                                        bStreamInit.setVisibility(VISIBLE);
-                                        bStreamPause.setVisibility(GONE);
-                                        bStreamResume.setVisibility(GONE);
-                                        bStreamClose.setVisibility(GONE);
-
-                                        bGroupMatch.setVisibility(VISIBLE);
-                                        bGroupLeave.setVisibility(GONE);
-
-                                        mOverlayView.imHome.setImageBitmap(mOverlayView.mBmpOff);
-
-                                        showLoaded();
-                                    }
-                                });
-                            } catch (Exception e) {
-                                Log.e(TAG, "streamClose", e);
-                                Toast.makeText(getContext(), R.string.error_streamclose, Toast.LENGTH_SHORT).show();
-                                mOverlayView.mService.runOnUiThread(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        showLoaded();
-                                    }
-                                });
-                            }
+                            });
                         }
                     });
+                    builder.setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                        }
+                    });
+                    Dialog dialog = builder.create();
+                    dialog.getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);
+                    dialog.show();
                 }
             });
             mContentLayout.addView(bStreamClose);
@@ -323,11 +338,11 @@ public class HomeView extends ContentView {
 
                                 try {
                                     if (mOverlayView.mService.mStream != null) {
-                                        mOverlayView.mService.mMapperChannel.groupMatch(mLookupRadius);
+                                        mOverlayView.mService.mMapperChannel.groupMatch(mLookupRadius, mOverlayView.mService.mStream.getString("group_jid"));
                                     }
                                     else {
                                         mOverlayView.mService.mMapperChannel.connect();
-                                        mOverlayView.mService.mMapperChannel.groupMatch(mLookupRadius);
+                                        mOverlayView.mService.mMapperChannel.groupMatch(mLookupRadius, null);
                                         mOverlayView.mService.mMapperChannel.disconnect();
                                     }
                                     mLastLookup = System.currentTimeMillis();
@@ -370,12 +385,37 @@ public class HomeView extends ContentView {
                                                     @Override
                                                     public void onClick(DialogInterface dialog, int which) {
                                                         // stream_init OR group_join
-                                                        Log.i(TAG, String.format("list index is %d", position));
+                                                        final String groupJid;
+                                                        try {
+                                                            JSONObject group = mOverlayView.mService.mMatchedGroups.getJSONObject(position);
+                                                            groupJid = group.getString("group_jid");
+                                                        } catch (Exception e) {
+                                                            if (mOverlayView.mService.mStream != null) {
+                                                                Toast.makeText(getContext(), R.string.error_groupjoin, Toast.LENGTH_SHORT);
+                                                            } else {
+                                                                Toast.makeText(getContext(), R.string.error_streaminit, Toast.LENGTH_SHORT);
+                                                            }
+                                                            return;
+                                                        }
+
                                                         mLookupDialog.dismiss();
+
                                                         if (mOverlayView.mService.mStream != null) {
                                                             // group_join
+                                                            mOverlayView.mService.runOnUiThread(new Runnable() {
+                                                                @Override
+                                                                public void run() {
+                                                                    groupMatchGroupJoin(groupJid);
+                                                                }
+                                                            });
                                                         } else {
                                                             // stream_init
+                                                            mOverlayView.mService.runOnUiThread(new Runnable() {
+                                                                @Override
+                                                                public void run() {
+                                                                    groupMatchStreamInit(groupJid);
+                                                                }
+                                                            });
                                                         }
                                                     }
                                                 });
@@ -423,11 +463,54 @@ public class HomeView extends ContentView {
             bGroupLeave.setOnClickListener(new OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    try {
+                    AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+                    builder.setTitle(R.string.alert_group_leave);
+                    builder.setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            showLoading();
+                            mOverlayView.mService.runConcurrentThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    try {
+                                        mOverlayView.mService.mMapperChannel.groupLeave();
+                                        Toast.makeText(getContext(), R.string.success_groupleave, Toast.LENGTH_SHORT).show();
 
-                    } catch (Exception e) {
-                        Log.e(TAG, "groupLeave", e);
-                    }
+                                        try {
+                                            mOverlayView.mService.mPartyChannel.join(mOverlayView.mService.mStream.getString("group_jid"));
+                                        } catch (Exception e) {
+                                            Log.e(TAG, "groupLeave", e);
+                                            Toast.makeText(getContext(), R.string.error_groupjoin, Toast.LENGTH_SHORT).show();
+                                        }
+
+                                        mOverlayView.mService.runOnUiThread(new Runnable() {
+                                            @Override
+                                            public void run() {
+                                                showLoaded();
+                                            }
+                                        });
+                                    } catch (Exception e) {
+                                        Log.e(TAG, "groupLeave", e);
+                                        Toast.makeText(getContext(), R.string.error_groupleave, Toast.LENGTH_SHORT).show();
+                                        mOverlayView.mService.runOnUiThread(new Runnable() {
+                                            @Override
+                                            public void run() {
+                                                showLoaded();
+                                            }
+                                        });
+                                    }
+                                }
+                            });
+                        }
+                    });
+                    builder.setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                        }
+                    });
+                    Dialog dialog = builder.create();
+                    dialog.getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);
+                    dialog.show();
                 }
             });
             mContentLayout.addView(bGroupLeave);
@@ -458,5 +541,116 @@ public class HomeView extends ContentView {
         vParty = partyView;
     }
 
+    public void groupMatchStreamInit (final String groupJid) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+        builder.setTitle(R.string.btn_stream_init);
+        builder.setMessage(R.string.alert_stream_init);
 
+        final EditText txtHashtags = new EditText(getContext());
+        builder.setView(txtHashtags);
+
+        builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                if (txtHashtags.getText().toString().isEmpty()) {
+                    Toast.makeText(getContext(), R.string.error_streaminit_hashtags, Toast.LENGTH_SHORT);
+                    return;
+                }
+
+                mOverlayView.mService.mHashtags = txtHashtags.getText().toString();
+
+                showLoading();
+                mOverlayView.mService.runConcurrentThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            mOverlayView.mService.mMapperChannel.connect();
+
+                            mOverlayView.mService.mMapperChannel.streamInit(mOverlayView.mService.mMedia, groupJid);
+
+                            try {
+                                mOverlayView.mService.mPartyChannel.join(mOverlayView.mService.mStream.getString("group_jid"));
+                            } catch (Exception e) {
+                                Log.e(TAG, "streamInit", e);
+                                Toast.makeText(getContext(), R.string.error_groupjoin, Toast.LENGTH_SHORT).show();
+                            }
+
+                            mOverlayView.mService.runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    mOverlayView.enableMenu();
+
+                                    bStreamInit.setVisibility(GONE);
+                                    bStreamPause.setVisibility(VISIBLE);
+                                    bStreamClose.setVisibility(VISIBLE);
+
+                                    bGroupLeave.setVisibility(VISIBLE);
+
+                                    mOverlayView.imHome.setImageBitmap(mOverlayView.mBmpOn);
+
+                                    showLoaded();
+                                }
+                            });
+                        } catch (Exception e) {
+                            Log.e(TAG, "streamInit", e);
+                            Toast.makeText(getContext(), R.string.error_streaminit, Toast.LENGTH_SHORT).show();
+                            mOverlayView.mService.mMapperChannel.disconnect();
+                            mOverlayView.mService.runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    showLoaded();
+                                }
+                            });
+                        }
+                    }
+                });
+            }
+        });
+        builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                return;
+            }
+        });
+
+        Dialog dialog = builder.create();
+        dialog.getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);
+        dialog.show();
+    }
+
+    public void groupMatchGroupJoin(final String groupJid) {
+        showLoading();
+        mOverlayView.mService.runConcurrentThread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    mOverlayView.mService.mMapperChannel.groupJoin(groupJid);
+                    Toast.makeText(getContext(), R.string.success_groupjoin, Toast.LENGTH_SHORT).show();
+
+                    try {
+                        mOverlayView.mService.mPartyChannel.join(mOverlayView.mService.mStream.getString("group_jid"));
+                    } catch (Exception e) {
+                        Log.e(TAG, "groupLeave", e);
+                        Toast.makeText(getContext(), R.string.error_groupjoin, Toast.LENGTH_SHORT).show();
+                    }
+
+                    mOverlayView.mService.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            showLoaded();
+                        }
+                    });
+                } catch (Exception e) {
+                    Log.e(TAG, "groupLeave", e);
+                    Toast.makeText(getContext(), R.string.error_groupleave, Toast.LENGTH_SHORT).show();
+                    mOverlayView.mService.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            showLoaded();
+                        }
+                    });
+                }
+            }
+        });
+    }
 }

@@ -14,6 +14,7 @@ import android.widget.Toast;
 
 import org.jivesoftware.smack.AbstractXMPPConnection;
 import org.jivesoftware.smack.ConnectionConfiguration;
+import org.jivesoftware.smack.android.AndroidSmackInitializer;
 import org.jivesoftware.smack.tcp.XMPPTCPConnection;
 import org.jivesoftware.smack.tcp.XMPPTCPConnectionConfiguration;
 import org.json.JSONArray;
@@ -42,6 +43,7 @@ public class NinjaBubbleMagic extends Service {
     public ProgressBar mLoading;
 
     public AbstractXMPPConnection mXmppConnection;
+    public AndroidSmackInitializer mAndroidInitializer;
     public MapperChannel mMapperChannel;
     public PartyChannel mPartyChannel;
 
