@@ -1,6 +1,7 @@
 package br.ufes.inf.lprm.ninjabubble;
 
 import android.app.Activity;
+import android.app.ActivityManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -34,6 +35,7 @@ public class MainActivity extends Activity {
     private String mMedia;
 
     public final static String ERROR_WHILE_STARTING = "ERROR_WHILE_STARTING";
+    public final static String ERROR_GPS = "ERROR_GPS";
     public final static String ERROR_XMPP_CONNECTION = "ERROR_XMPP_CONNECTION";
 
     @Override
@@ -132,10 +134,6 @@ public class MainActivity extends Activity {
         vJID.setText("src1@juancalles.ddns.net");
         vPWD.setText("123");
         vChannel.setText("callesjuan");
-
-        if (getIntent().hasExtra("flag") && getIntent().getExtras().getString("flag").equals(ERROR_WHILE_STARTING)) {
-            mServiceRunning = false;
-        }
     }
 
     @Override
@@ -154,6 +152,10 @@ public class MainActivity extends Activity {
             } catch (IndexOutOfBoundsException e) {
                 Log.e(TAG, String.format("index for \"%s\" does not exist in the media spinner"));
             }
+        }
+
+        if (mServiceRunning && !isMyServiceRunning(NinjaBubbleMagic.class)) {
+            mServiceRunning = false;
         }
 
         if (mServiceRunning) {
@@ -212,7 +214,8 @@ public class MainActivity extends Activity {
 
         @Override
         public void onReceive(Context context, Intent intent) {
-            if (intent.getAction().equals(ERROR_XMPP_CONNECTION)) {
+            String action = intent.getAction();
+            if (action.equals(ERROR_GPS) || action.equals(ERROR_XMPP_CONNECTION)) {
                 Log.e(TAG, intent.getStringExtra("value"));
                 Toast.makeText(MainActivity.this, intent.getStringExtra("value"), Toast.LENGTH_SHORT).show();
 
@@ -248,5 +251,15 @@ public class MainActivity extends Activity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    private boolean isMyServiceRunning(Class<?> serviceClass) {
+        ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (serviceClass.getName().equals(service.service.getClassName())) {
+                return true;
+            }
+        }
+        return false;
     }
 }

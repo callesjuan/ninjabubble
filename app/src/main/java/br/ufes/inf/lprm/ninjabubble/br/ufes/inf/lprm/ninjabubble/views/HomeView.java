@@ -56,6 +56,11 @@ public class HomeView extends ContentView {
             bStreamInit.setOnClickListener(new OnClickListener() {
                 @Override
                 public void onClick(View v) {
+                    if (mOverlayView.mService.mLatlng == null) {
+                        Toast.makeText(getContext(), R.string.error_location, Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
                     AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
                     builder.setTitle(R.string.btn_stream_init);
                     builder.setMessage(R.string.alert_stream_init);
@@ -67,7 +72,7 @@ public class HomeView extends ContentView {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
                             if (txtHashtags.getText().toString().isEmpty()) {
-                                Toast.makeText(getContext(), R.string.error_streaminit_hashtags, Toast.LENGTH_SHORT);
+                                Toast.makeText(getContext(), R.string.error_streaminit_hashtags, Toast.LENGTH_SHORT).show();
                                 return;
                             }
 
@@ -195,6 +200,10 @@ public class HomeView extends ContentView {
             bStreamResume.setOnClickListener(new OnClickListener() {
                 @Override
                 public void onClick(View v) {
+                    if (mOverlayView.mService.mLatlng == null) {
+                        Toast.makeText(getContext(), R.string.error_location, Toast.LENGTH_SHORT).show();
+                        return;
+                    }
                     showLoading();
                     mOverlayView.mService.runConcurrentThread(new Runnable() {
                         @Override
@@ -326,6 +335,10 @@ public class HomeView extends ContentView {
             bGroupMatch.setOnClickListener(new OnClickListener() {
                 @Override
                 public void onClick(View v) {
+                    if (mOverlayView.mService.mLatlng == null) {
+                        Toast.makeText(getContext(), R.string.error_location, Toast.LENGTH_SHORT).show();
+                        return;
+                    }
                     showLoading();
                     mOverlayView.mService.runConcurrentThread(new Runnable() {
                         @Override
@@ -391,9 +404,9 @@ public class HomeView extends ContentView {
                                                             groupJid = group.getString("group_jid");
                                                         } catch (Exception e) {
                                                             if (mOverlayView.mService.mStream != null) {
-                                                                Toast.makeText(getContext(), R.string.error_groupjoin, Toast.LENGTH_SHORT);
+                                                                Toast.makeText(getContext(), R.string.error_groupjoin, Toast.LENGTH_SHORT).show();
                                                             } else {
-                                                                Toast.makeText(getContext(), R.string.error_streaminit, Toast.LENGTH_SHORT);
+                                                                Toast.makeText(getContext(), R.string.error_streaminit, Toast.LENGTH_SHORT).show();
                                                             }
                                                             return;
                                                         }
@@ -463,6 +476,10 @@ public class HomeView extends ContentView {
             bGroupLeave.setOnClickListener(new OnClickListener() {
                 @Override
                 public void onClick(View v) {
+                    if (mOverlayView.mService.mLatlng == null) {
+                        Toast.makeText(getContext(), R.string.error_location, Toast.LENGTH_SHORT).show();
+                        return;
+                    }
                     AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
                     builder.setTitle(R.string.alert_group_leave);
                     builder.setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
@@ -553,7 +570,7 @@ public class HomeView extends ContentView {
             @Override
             public void onClick(DialogInterface dialog, int which) {
                 if (txtHashtags.getText().toString().isEmpty()) {
-                    Toast.makeText(getContext(), R.string.error_streaminit_hashtags, Toast.LENGTH_SHORT);
+                    Toast.makeText(getContext(), R.string.error_streaminit_hashtags, Toast.LENGTH_SHORT).show();
                     return;
                 }
 

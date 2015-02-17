@@ -3,12 +3,26 @@ package br.ufes.inf.lprm.ninjabubble;
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
 import android.graphics.PixelFormat;
+import android.graphics.drawable.BitmapDrawable;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
+import android.location.Location;
+import android.location.LocationListener;
+import android.location.LocationManager;
 import android.os.*;
 import android.support.v4.app.NotificationCompat;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.WindowManager;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
@@ -37,6 +51,15 @@ public class NinjaBubbleMagic extends Service {
     public Looper mParallelLooper;
 
 //    public Handler mConcurrentHandler;
+
+    public LocationManager mLocationManager;
+    public MyLocationListener mLocationListener;
+    public final int mMinTimeUpdate = 0;
+    public final float mMinDistanceUpdate = 0;
+
+    public SensorManager mSensorManager;
+    public Sensor mSensor;
+    public MySensorEventListener mSensorEventListener;
 
     public WindowManager mWindowManager;
     public OverlayView mOverlayView;
@@ -85,9 +108,52 @@ public class NinjaBubbleMagic extends Service {
                 check sensors (internet, gps, compass)
                  */
                 try {
-                    mLatlng = new JSONArray().put(0.1).put(0.1);
+                    mLocationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
+
+                    if (!mLocationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+                        throw new Exception("GPS must be enabled");
+                    }
+                    if (!mLocationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
+                        throw new Exception("Network Provider must be enabled");
+                    }
+
+                    Location location = mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+                    if (location == null) {
+                        location = mLocationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+                    }
+                    if (location != null) {
+                        JSONArray latlng = new JSONArray();
+                        latlng.put(location.getLongitude());
+                        latlng.put(location.getLatitude());
+                        mLatlng = latlng;
+                        Log.i(TAG, "location set on lat:" + location.getLatitude() + " and lng:" + location.getLongitude());
+                    }
+
+                    mLocationListener = new MyLocationListener();
+                    mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, mMinTimeUpdate, mMinDistanceUpdate, mLocationListener);
+                    mLocationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, mMinTimeUpdate, mMinDistanceUpdate, mLocationListener);
                 } catch (Exception e) {
-                    Log.e(TAG, "bad latlng");
+
+                    Log.e(TAG, "Error while retrieving GPS", e);
+                    Intent errorGPS = new Intent(MainActivity.ERROR_XMPP_CONNECTION);
+                    errorGPS.putExtra("value", e.getMessage());
+                    sendBroadcast(errorGPS);
+
+                    mWindowManager.removeView(mLoading);
+
+                    stopSelf();
+                    return;
+                }
+
+                try {
+                    mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+                    mSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
+
+                    mSensorEventListener = new MySensorEventListener();
+
+                    mSensorManager.registerListener(mSensorEventListener, mSensor, SensorManager.SENSOR_DELAY_NORMAL);
+                } catch (Exception e) {
+                    Log.e(TAG, "Orientation sensors", e);
                 }
 
                 /*
@@ -131,10 +197,8 @@ public class NinjaBubbleMagic extends Service {
                     mMapperChannel.disconnect();
 
                 } catch (Exception e) {
-                    Intent intent = new Intent(getBaseContext(), MainActivity.class);
-                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                    intent.putExtra("flag", MainActivity.ERROR_WHILE_STARTING);
-                    getApplication().startActivity(intent);
+
+                    mMapperChannel.disconnect();
 
                     Log.e(TAG, "Error while establishing XMPPConnection", e);
                     Intent errorXmppConnection = new Intent(MainActivity.ERROR_XMPP_CONNECTION);
@@ -154,15 +218,26 @@ public class NinjaBubbleMagic extends Service {
                 mWindowManager.removeView(mLoading);
             } else if (msg.getData().getString("action").equals(ACTION_ONDESTROY)) {
                 try {
+                    mLocationManager.removeUpdates(mLocationListener);
+                    mSensorManager.unregisterListener(mSensorEventListener);
+                } catch (Exception e) {
+                    Log.w(TAG, "while releasing sensors");
+                }
+
+                try {
                     mOverlayView.finish();
                     Log.i(TAG, "OverlayView succesfully removed");
-                }
-                catch (Exception e) {
+                } catch (Exception e) {
                     Log.w(TAG, "views were not added to windowmanager");
                 }
 
-                mPartyChannel.leave();
-                mMapperChannel.disconnect();
+                if (mPartyChannel != null) {
+                    mPartyChannel.leave();
+                }
+
+                if (mMapperChannel != null) {
+                    mMapperChannel.disconnect();
+                }
             }
         }
     }
@@ -260,5 +335,155 @@ public class NinjaBubbleMagic extends Service {
 //        mConcurrentHandler.post(runnable);
         Handler handler = new Handler(mParallelLooper);
         handler.post(runnable);
+    }
+
+    public class MyLocationListener implements LocationListener {
+
+        private static final int THRESHOLD = 1000 * 60 * 2;
+
+        Location mCurrentBestLocation;
+
+        /** Determines whether one Location reading is better than the current Location fix
+         * @param location  The new Location that you want to evaluate
+         * @param currentBestLocation  The current Location fix, to which you want to compare the new one
+         */
+        protected boolean isBetterLocation(Location location, Location currentBestLocation) {
+            if (currentBestLocation == null) {
+                // A new location is always better than no location
+                return true;
+            }
+
+            // Check whether the new location fix is newer or older
+            long timeDelta = location.getTime() - currentBestLocation.getTime();
+            boolean isSignificantlyNewer = timeDelta > THRESHOLD;
+            boolean isSignificantlyOlder = timeDelta < -THRESHOLD;
+            boolean isNewer = timeDelta > 0;
+
+            // If it's been more than two minutes since the current location, use the new location
+            // because the user has likely moved
+            if (isSignificantlyNewer) {
+                return true;
+                // If the new location is more than two minutes older, it must be worse
+            } else if (isSignificantlyOlder) {
+                return false;
+            }
+
+            // Check whether the new location fix is more or less accurate
+            int accuracyDelta = (int) (location.getAccuracy() - currentBestLocation.getAccuracy());
+            boolean isLessAccurate = accuracyDelta > 0;
+            boolean isMoreAccurate = accuracyDelta < 0;
+            boolean isSignificantlyLessAccurate = accuracyDelta > 200;
+
+            // Check if the old and new location are from the same provider
+            boolean isFromSameProvider = isSameProvider(location.getProvider(),
+                    currentBestLocation.getProvider());
+
+            // Determine location quality using a combination of timeliness and accuracy
+            if (isMoreAccurate) {
+                return true;
+            } else if (isNewer && !isLessAccurate) {
+                return true;
+            } else if (isNewer && !isSignificantlyLessAccurate && isFromSameProvider) {
+                return true;
+            }
+            return false;
+        }
+
+        /** Checks whether two providers are the same */
+        private boolean isSameProvider(String provider1, String provider2) {
+            if (provider1 == null) {
+                return provider2 == null;
+            }
+            return provider1.equals(provider2);
+        }
+
+        @Override
+        public void onLocationChanged(final Location location) {
+            Log.i(TAG, "lat:"+location.getLatitude()+" lng:"+location.getLongitude());
+            if (isBetterLocation(location, mCurrentBestLocation)) {
+                mCurrentBestLocation = location;
+                Log.i(TAG, "isBetterLocation");
+
+                try {
+                    JSONArray latlng = new JSONArray();
+                    latlng.put(location.getLongitude());
+                    latlng.put(location.getLatitude());
+                    mLatlng = latlng;
+
+                    if (mStream != null && mStream.getString("status").equals("streaming")) {
+                        runConcurrentThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                try {
+                                    mMapperChannel.updateLatlng(mLatlng);
+                                } catch (Exception e) {
+                                    Log.e(TAG, "onLocationChanged", e);
+                                }
+                            }
+                        });
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG, "onLocationChanged", e);
+//                    Toast.makeText(NinjaBubbleMagic.this, R.string.error_locationchanged, Toast.LENGTH_SHORT).show();
+                }
+            }
+        }
+
+        @Override
+        public void onStatusChanged(String provider, int status, Bundle extras) {
+
+        }
+
+        @Override
+        public void onProviderEnabled(String provider) {
+
+        }
+
+        @Override
+        public void onProviderDisabled(String provider) {
+            Toast.makeText(NinjaBubbleMagic.this, R.string.error_locationprovideroff, Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    public class MySensorEventListener implements SensorEventListener {
+
+        @Override
+        public void onSensorChanged(SensorEvent event) {
+            try {
+                if (mStream != null && mStream.getString("status").equals("streaming")) {
+                    float rotate = event.values[0];
+
+                    Bitmap bmp = BitmapFactory.decodeResource(getResources(), R.drawable.self);
+                    int width = bmp.getWidth(), height = bmp.getHeight();
+
+                    // Initialize a new Matrix
+                    Matrix matrix = new Matrix();
+
+                    // Decide on how much to rotate
+                    rotate = rotate % 360;
+
+                    // Actually rotate the image
+                    matrix.postRotate( rotate, width, height );
+
+                    // recreate the new Bitmap via a couple conditions
+                    final Bitmap rotatedBitmap = Bitmap.createBitmap( bmp, 0, 0, width, height, matrix, true );
+
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            mOverlayView.vMinimap.imSelf.setImageDrawable(new BitmapDrawable(getResources(), rotatedBitmap));
+                            mOverlayView.vMinimap.imSelf.setScaleType( ImageView.ScaleType.CENTER );
+                        }
+                    });
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "onSensorChanged", e);
+            }
+        }
+
+        @Override
+        public void onAccuracyChanged(Sensor sensor, int accuracy) {
+
+        }
     }
 }
