@@ -1,10 +1,8 @@
 package br.ufes.inf.lprm.ninjabubble.br.ufes.inf.lprm.ninjabubble.views;
 
 import android.content.Context;
-import android.graphics.PixelFormat;
 import android.view.Gravity;
 import android.view.ViewGroup;
-import android.view.WindowManager;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 

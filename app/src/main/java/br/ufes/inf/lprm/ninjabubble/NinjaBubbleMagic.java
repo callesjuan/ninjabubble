@@ -22,6 +22,8 @@ import android.support.v4.app.NotificationCompat;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.WindowManager;
+import android.view.animation.Animation;
+import android.view.animation.RotateAnimation;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.Toast;
@@ -59,6 +61,8 @@ public class NinjaBubbleMagic extends Service {
 
     public SensorManager mSensorManager;
     public Sensor mSensor;
+    public Sensor mAccelerometer;
+    public Sensor mMagnetometer;
     public MySensorEventListener mSensorEventListener;
 
     public WindowManager mWindowManager;
@@ -147,11 +151,16 @@ public class NinjaBubbleMagic extends Service {
 
                 try {
                     mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-                    mSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
+
+//                    mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
+                    mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
+                    mMagnetometer = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
 
                     mSensorEventListener = new MySensorEventListener();
 
-                    mSensorManager.registerListener(mSensorEventListener, mSensor, SensorManager.SENSOR_DELAY_NORMAL);
+                    mSensorManager.registerListener(mSensorEventListener, mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
+                    mSensorManager.registerListener(mSensorEventListener, mMagnetometer, SensorManager.SENSOR_DELAY_NORMAL);
+
                 } catch (Exception e) {
                     Log.e(TAG, "Orientation sensors", e);
                 }
@@ -219,9 +228,13 @@ public class NinjaBubbleMagic extends Service {
             } else if (msg.getData().getString("action").equals(ACTION_ONDESTROY)) {
                 try {
                     mLocationManager.removeUpdates(mLocationListener);
+                } catch (Exception e) {
+                    Log.w(TAG, "while releasing gps");
+                }
+                try {
                     mSensorManager.unregisterListener(mSensorEventListener);
                 } catch (Exception e) {
-                    Log.w(TAG, "while releasing sensors");
+                    Log.w(TAG, "while releasing accelerometer and geometer");
                 }
 
                 try {
@@ -447,34 +460,68 @@ public class NinjaBubbleMagic extends Service {
 
     public class MySensorEventListener implements SensorEventListener {
 
+        float []mGravity;
+        float []mGeomagnetic;
+
+        Float mAzimut;
+        Float mAzimutInDegress;
+        Float mCurrentDegree = 0f;
+
         @Override
         public void onSensorChanged(SensorEvent event) {
             try {
                 if (mStream != null && mStream.getString("status").equals("streaming")) {
-                    float rotate = event.values[0];
+                    if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+                        mGravity = event.values;
+                    } else if (event.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
+                        mGeomagnetic = event.values;
+                    }
+                    if (mGravity != null && mGeomagnetic != null) {
+                        float R[] = new float[9];
+                        float I[] = new float[9];
+                        boolean success = SensorManager.getRotationMatrix(R, I, mGravity, mGeomagnetic);
+                        if (success) {
+                            float orientation[] = new float[3];
+                            SensorManager.getOrientation(R, orientation);
+                            mAzimut = orientation[0]; // orientation contains: azimut, pitch and roll
+                            mAzimutInDegress = (float) Math.toDegrees(mAzimut);
+//                            mAzimutInDegress = -mAzimut*360/(2*3.14159f);
 
-                    Bitmap bmp = BitmapFactory.decodeResource(getResources(), R.drawable.self);
-                    int width = bmp.getWidth(), height = bmp.getHeight();
+                            runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+//                                    float degrees = 90;
+//                                    Bitmap source = BitmapFactory.decodeResource(getResources(), R.drawable.self);
+//                                    Matrix matrix = new Matrix();
+//                                    matrix.postRotate(degrees);
+//                                    Bitmap rotated = Bitmap.createBitmap(source, 0, 0, source.getWidth(), source.getHeight(), matrix, true);
+//                                    mOverlayView.vMinimap.imSelf.setImageBitmap(rotated);
 
-                    // Initialize a new Matrix
-                    Matrix matrix = new Matrix();
+//                                    RotateAnimation ra = new RotateAnimation(
+//                                            mCurrentDegree,
+//                                            -mAzimutInDegress,
+//                                            Animation.RELATIVE_TO_SELF, 0.5f,
+//                                            Animation.RELATIVE_TO_SELF,
+//                                            0.5f);
+//                                    ra.setDuration(250);
+//                                    ra.setFillAfter(true);
+//                                    mOverlayView.vMinimap.imSelf.startAnimation(ra);
+//                                    mCurrentDegree = -mAzimutInDegress;
 
-                    // Decide on how much to rotate
-                    rotate = rotate % 360;
-
-                    // Actually rotate the image
-                    matrix.postRotate( rotate, width, height );
-
-                    // recreate the new Bitmap via a couple conditions
-                    final Bitmap rotatedBitmap = Bitmap.createBitmap( bmp, 0, 0, width, height, matrix, true );
-
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            mOverlayView.vMinimap.imSelf.setImageDrawable(new BitmapDrawable(getResources(), rotatedBitmap));
-                            mOverlayView.vMinimap.imSelf.setScaleType( ImageView.ScaleType.CENTER );
+                                    RotateAnimation ra = new RotateAnimation(
+                                            mCurrentDegree,
+                                            mAzimutInDegress,
+                                            Animation.RELATIVE_TO_SELF, 0.5f,
+                                            Animation.RELATIVE_TO_SELF,
+                                            0.5f);
+                                    ra.setDuration(250);
+                                    ra.setFillAfter(true);
+                                    mOverlayView.vMinimap.imSelf.startAnimation(ra);
+                                    mCurrentDegree = mAzimutInDegress;
+                                }
+                            });
                         }
-                    });
+                    }
                 }
             } catch (Exception e) {
                 Log.e(TAG, "onSensorChanged", e);

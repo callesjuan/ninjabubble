@@ -1,10 +1,7 @@
 package br.ufes.inf.lprm.ninjabubble.br.ufes.inf.lprm.ninjabubble.views;
 
 import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 
 import br.ufes.inf.lprm.ninjabubble.R;
 
