@@ -7,9 +7,12 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.PixelFormat;
 import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.RotateDrawable;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
@@ -477,6 +480,7 @@ public class NinjaBubbleMagic extends Service {
                         mGeomagnetic = event.values;
                     }
                     if (mGravity != null && mGeomagnetic != null) {
+                        final int selfId = R.drawable.self;
                         float R[] = new float[9];
                         float I[] = new float[9];
                         boolean success = SensorManager.getRotationMatrix(R, I, mGravity, mGeomagnetic);
@@ -508,16 +512,29 @@ public class NinjaBubbleMagic extends Service {
 //                                    mOverlayView.vMinimap.imSelf.startAnimation(ra);
 //                                    mCurrentDegree = -mAzimutInDegress;
 
-                                    RotateAnimation ra = new RotateAnimation(
-                                            mCurrentDegree,
-                                            mAzimutInDegress,
-                                            Animation.RELATIVE_TO_SELF, 0.5f,
-                                            Animation.RELATIVE_TO_SELF,
-                                            0.5f);
-                                    ra.setDuration(250);
-                                    ra.setFillAfter(true);
-                                    mOverlayView.vMinimap.imSelf.startAnimation(ra);
+//                                    RotateAnimation ra = new RotateAnimation(
+//                                            mCurrentDegree,
+//                                            mAzimutInDegress,
+//                                            Animation.RELATIVE_TO_SELF, 0.5f,
+//                                            Animation.RELATIVE_TO_SELF,
+//                                            0.5f);
+//                                    ra.setDuration(250);
+//                                    ra.setFillAfter(true);
+//                                    mOverlayView.vMinimap.imSelf.startAnimation(ra);
+//                                    mCurrentDegree = mAzimutInDegress;
+
                                     mCurrentDegree = mAzimutInDegress;
+
+                                    Bitmap bmpOriginal = BitmapFactory.decodeResource(getResources(), selfId);
+                                    Bitmap bmResult = Bitmap.createBitmap(bmpOriginal.getWidth(), bmpOriginal.getHeight(), Bitmap.Config.ARGB_8888);
+                                    Canvas tempCanvas = new Canvas(bmResult);
+                                    tempCanvas.rotate(mCurrentDegree, bmpOriginal.getWidth()/2, bmpOriginal.getHeight()/2);
+                                    tempCanvas.drawBitmap(bmpOriginal, 0, 0, null);
+
+                                    Drawable drawable = new BitmapDrawable(getResources(), bmResult);
+
+                                    mOverlayView.vMinimap.mSelf.setMarker(drawable);
+                                    mOverlayView.vMinimap.mMapView.invalidate();
                                 }
                             });
                         }
@@ -531,6 +548,19 @@ public class NinjaBubbleMagic extends Service {
         @Override
         public void onAccuracyChanged(Sensor sensor, int accuracy) {
 
+        }
+
+        Drawable getRotateDrawable(final Bitmap b, final float angle) {
+            final BitmapDrawable drawable = new BitmapDrawable(getResources(), b) {
+                @Override
+                public void draw(final Canvas canvas) {
+                    canvas.save();
+                    canvas.rotate(angle, b.getWidth() / 2, b.getHeight() / 2);
+                    super.draw(canvas);
+                    canvas.restore();
+                }
+            };
+            return drawable;
         }
     }
 }

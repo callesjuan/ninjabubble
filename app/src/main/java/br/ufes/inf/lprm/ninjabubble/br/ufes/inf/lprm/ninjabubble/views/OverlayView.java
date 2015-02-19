@@ -259,6 +259,8 @@ public class OverlayView {
 
     public void finish() throws Exception {
         try {
+            vMinimap.mMapView.getTileProvider().detach();
+
             mWindowManager.removeView(mNinjaHead);
             mWindowManager.removeView(mParentLayout);
         }
