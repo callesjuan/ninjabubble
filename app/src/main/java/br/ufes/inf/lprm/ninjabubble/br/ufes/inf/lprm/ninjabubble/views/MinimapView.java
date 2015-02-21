@@ -7,6 +7,12 @@ import android.graphics.Canvas;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.util.Log;
+import android.view.Gravity;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import org.osmdroid.api.IMapController;
 import org.osmdroid.bonuspack.overlays.MapEventsOverlay;
@@ -33,8 +39,13 @@ public class MinimapView extends ContentView {
     public IMapController mMapController;
     public OverlayItem mSelf;
 
+    public LinearLayout mOptions;
+
     public MinimapView(Context context, OverlayView overlayView) {
         super(context, overlayView);
+
+        mContentLayout.setGravity(Gravity.CENTER_HORIZONTAL);
+        mContentLayout.setLayoutParams(new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
     }
 
     @Override
@@ -49,11 +60,20 @@ public class MinimapView extends ContentView {
             mHasLoaded = true;
         }
 
+        int contentWidth = (int) (mOverlayView.mWidth);
+        int contentHeight = (int) (mOverlayView.mHeight * 0.8);
+
         mMapView = new MapView(getContext(), 10);
         mMapView.setTileSource(TileSourceFactory.MAPNIK);
         mMapView.setBuiltInZoomControls(true);
         mMapView.setMultiTouchControls(true);
+        mMapView.setLayoutParams(new LinearLayout.LayoutParams(contentWidth, contentHeight));
         mContentLayout.addView(mMapView);
+
+        mOptions = new LinearLayout(getContext());
+        mOptions.setGravity(Gravity.CENTER);
+        mOptions.setLayoutParams(new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        mContentLayout.addView(mOptions);
 
         mMapController = mMapView.getController();
         mMapController.setZoom(19);
@@ -71,7 +91,7 @@ public class MinimapView extends ContentView {
             }
         };
         MapEventsOverlay eventsOverlay = new MapEventsOverlay(getContext(), eventsReceiver);
-        mMapView.getOverlays().add(eventsOverlay);
+//        mMapView.getOverlays().add(eventsOverlay);
 
         try {
             loadSelf();
@@ -99,6 +119,19 @@ public class MinimapView extends ContentView {
         } catch (Exception e) {
             Log.e(TAG, "could not retrieve current latlng");
         }
+
+        Button bPan = new Button(getContext());
+        bPan.setText("<o>");
+        bPan.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                loadSelf();
+                mMapController.setCenter(mSelf.getPoint());
+                mMapView.invalidate();
+            }
+        });
+        mOptions.addView(bPan);
+
         showLoaded();
     }
 
@@ -124,7 +157,9 @@ public class MinimapView extends ContentView {
             double lng = mOverlayView.mService.mLatlng.getDouble(0);
             GeoPoint myLatlng = new GeoPoint(lat, lng);
 
-            mSelf = new OverlayItem("self", "Current position", myLatlng);
+            if (mSelf == null) {
+                mSelf = new OverlayItem("self", "current position", myLatlng);
+            }
             mSelf.setMarker(drawable);
 
         } catch (Exception e) {

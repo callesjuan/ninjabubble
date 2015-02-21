@@ -117,8 +117,8 @@ public class NinjaBubbleMagic extends Service {
                 try {
                     mLocationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
 
-                    if (!mLocationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) || !mLocationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
-                        throw new Exception("GPS and Network Provider must be enabled");
+                    if (!(mLocationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) || mLocationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER))) {
+                        throw new Exception("GPS or Network Provider must be enabled");
                     }
 
                     mLocationListener = new MyLocationListener();

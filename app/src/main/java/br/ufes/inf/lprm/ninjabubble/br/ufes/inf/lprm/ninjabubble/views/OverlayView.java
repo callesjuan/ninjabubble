@@ -31,6 +31,9 @@ public class OverlayView {
     public LinearLayout mContentLayout;
     public ImageView mNinjaHead;
 
+    public double mWidth;
+    public double mHeight;
+
     public ImageView imHome;
     public ImageView imMinimap;
     public ImageView imChat;
@@ -132,11 +135,11 @@ public class OverlayView {
         DisplayMetrics metrics = new DisplayMetrics();
         mWindowManager.getDefaultDisplay().getMetrics(metrics);
 
-        double overlayWidth = metrics.widthPixels * 0.90;
-        double overlayHeight = metrics.heightPixels * 0.75;
+        mWidth = metrics.widthPixels * 0.90;
+        mHeight = metrics.heightPixels * 0.75;
 
         final int IM_NUMBER = 4;
-        int imSize = (int) ((overlayWidth / IM_NUMBER) * 0.75);
+        int imSize = (int) ((mWidth / IM_NUMBER) * 0.75);
 
         /*
         MENU
@@ -145,8 +148,8 @@ public class OverlayView {
             mMenuLayout = new LinearLayout(mService);
             mMenuLayout.setGravity(Gravity.CENTER);
 
-            int marginH = (int) (overlayWidth * 0.02);
-            int marginV = (int) (overlayHeight * 0.02);
+            int marginH = (int) (mWidth * 0.02);
+            int marginV = (int) (mHeight * 0.02);
             LinearLayout.LayoutParams menuParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
             menuParams.setMargins(marginH, marginV, marginH, marginV);
 
@@ -212,6 +215,7 @@ public class OverlayView {
             imHide.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
+                    vHome.show();
                     mParentLayout.setVisibility(View.GONE);
                     mNinjaHead.setVisibility(View.VISIBLE);
                 }
@@ -235,8 +239,8 @@ public class OverlayView {
          */
         {
             mContentLayout = new LinearLayout(mService);
-            int contentWidth = (int) (overlayWidth);
-            int contentHeight = (int) (overlayHeight);
+            int contentWidth = (int) (mWidth);
+            int contentHeight = (int) (mHeight);
             mContentLayout.setLayoutParams(new LinearLayout.LayoutParams(contentWidth, contentHeight));
             mParentLayout.addView(mContentLayout);
         }
