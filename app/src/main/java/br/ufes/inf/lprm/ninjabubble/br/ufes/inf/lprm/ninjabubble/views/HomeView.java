@@ -25,10 +25,6 @@ import br.ufes.inf.lprm.ninjabubble.R;
 public class HomeView extends ContentView {
     public final String TAG = "NinjaBubbleMagic/HomeView";
 
-    public MinimapView vMinimap;
-    public ChatView vChat;
-    public PartyView vParty;
-
     public Button bStreamInit;
     public Button bStreamPause;
     public Button bStreamResume;
@@ -46,6 +42,19 @@ public class HomeView extends ContentView {
         super(context, overlayView);
 
         Log.i(TAG, "created");
+    }
+
+    @Override
+    public void show() {
+        super.show();
+
+        if (mHasLoaded) {
+            showLoaded();
+            return;
+        }
+        else {
+            mHasLoaded = true;
+        }
 
         /**
          * streamInit
@@ -56,6 +65,7 @@ public class HomeView extends ContentView {
             bStreamInit.setOnClickListener(new OnClickListener() {
                 @Override
                 public void onClick(View v) {
+                    mOverlayView.mService.getLastKnownLocation();
                     if (mOverlayView.mService.mLatlng == null) {
                         Toast.makeText(getContext(), R.string.error_location, Toast.LENGTH_SHORT).show();
                         return;
@@ -84,6 +94,10 @@ public class HomeView extends ContentView {
                                 public void run() {
                                     try {
                                         mOverlayView.mService.mMapperChannel.connect();
+                                        mOverlayView.mService.mMapperChannel.streamStatus();
+
+                                        mOverlayView.mService.startLocationListener();
+                                        mOverlayView.mService.startOrientationListener();
 
                                         mOverlayView.mService.mMapperChannel.streamInit(mOverlayView.mService.mMedia, null);
 
@@ -97,8 +111,6 @@ public class HomeView extends ContentView {
                                         mOverlayView.mService.runOnUiThread(new Runnable() {
                                             @Override
                                             public void run() {
-                                                mOverlayView.enableMenu();
-
                                                 bStreamInit.setVisibility(GONE);
                                                 bStreamPause.setVisibility(VISIBLE);
                                                 bStreamClose.setVisibility(VISIBLE);
@@ -107,6 +119,7 @@ public class HomeView extends ContentView {
 
                                                 mOverlayView.imHome.setImageBitmap(mOverlayView.mBmpOn);
 
+                                                mOverlayView.enableMenu();
                                                 showLoaded();
                                             }
                                         });
@@ -114,6 +127,10 @@ public class HomeView extends ContentView {
                                         Log.e(TAG, "streamInit", e);
                                         Toast.makeText(getContext(), R.string.error_streaminit, Toast.LENGTH_SHORT).show();
                                         mOverlayView.mService.mMapperChannel.disconnect();
+
+                                        mOverlayView.mService.stopLocationListener();
+                                        mOverlayView.mService.stopOrientationListener();
+
                                         mOverlayView.mService.runOnUiThread(new Runnable() {
                                             @Override
                                             public void run() {
@@ -158,11 +175,12 @@ public class HomeView extends ContentView {
                                 mOverlayView.mService.mPartyChannel.leave();
                                 mOverlayView.mService.mMapperChannel.disconnect();
 
+                                mOverlayView.mService.stopLocationListener();
+                                mOverlayView.mService.stopOrientationListener();
+
                                 mOverlayView.mService.runOnUiThread(new Runnable() {
                                     @Override
                                     public void run() {
-                                        mOverlayView.disableMenu();
-
                                         bStreamPause.setVisibility(GONE);
                                         bStreamResume.setVisibility(VISIBLE);
 
@@ -171,6 +189,7 @@ public class HomeView extends ContentView {
 
                                         mOverlayView.imHome.setImageBitmap(mOverlayView.mBmpOff);
 
+                                        mOverlayView.disableMenu();
                                         showLoaded();
                                     }
                                 });
@@ -200,6 +219,7 @@ public class HomeView extends ContentView {
             bStreamResume.setOnClickListener(new OnClickListener() {
                 @Override
                 public void onClick(View v) {
+                    mOverlayView.mService.getLastKnownLocation();
                     if (mOverlayView.mService.mLatlng == null) {
                         Toast.makeText(getContext(), R.string.error_location, Toast.LENGTH_SHORT).show();
                         return;
@@ -211,6 +231,10 @@ public class HomeView extends ContentView {
                             try {
                                 mOverlayView.mService.mMapperChannel.connect();
                                 mOverlayView.mService.mMapperChannel.streamStatus();
+
+                                mOverlayView.mService.startLocationListener();
+                                mOverlayView.mService.startOrientationListener();
+
                                 mOverlayView.mService.mMapperChannel.streamResume();
 
                                 try {
@@ -223,7 +247,6 @@ public class HomeView extends ContentView {
                                 mOverlayView.mService.runOnUiThread(new Runnable() {
                                     @Override
                                     public void run() {
-                                        mOverlayView.enableMenu();
 
                                         bStreamPause.setVisibility(VISIBLE);
                                         bStreamResume.setVisibility(GONE);
@@ -233,6 +256,7 @@ public class HomeView extends ContentView {
 
                                         mOverlayView.imHome.setImageBitmap(mOverlayView.mBmpOn);
 
+                                        mOverlayView.enableMenu();
                                         showLoaded();
                                     }
                                 });
@@ -240,6 +264,10 @@ public class HomeView extends ContentView {
                                 Log.e(TAG, "streamResume", e);
                                 Toast.makeText(getContext(), R.string.error_streamresume, Toast.LENGTH_SHORT).show();
                                 mOverlayView.mService.mMapperChannel.disconnect();
+
+                                mOverlayView.mService.stopLocationListener();
+                                mOverlayView.mService.stopOrientationListener();
+
                                 mOverlayView.mService.runOnUiThread(new Runnable() {
                                     @Override
                                     public void run() {
@@ -281,11 +309,12 @@ public class HomeView extends ContentView {
                                         mOverlayView.mService.mPartyChannel.leave();
                                         mOverlayView.mService.mMapperChannel.disconnect();
 
+                                        mOverlayView.mService.stopLocationListener();
+                                        mOverlayView.mService.stopOrientationListener();
+
                                         mOverlayView.mService.runOnUiThread(new Runnable() {
                                             @Override
                                             public void run() {
-                                                mOverlayView.disableMenu();
-
                                                 bStreamInit.setVisibility(VISIBLE);
                                                 bStreamPause.setVisibility(GONE);
                                                 bStreamResume.setVisibility(GONE);
@@ -296,6 +325,7 @@ public class HomeView extends ContentView {
 
                                                 mOverlayView.imHome.setImageBitmap(mOverlayView.mBmpOff);
 
+                                                mOverlayView.disableMenu();
                                                 showLoaded();
                                             }
                                         });
@@ -335,6 +365,7 @@ public class HomeView extends ContentView {
             bGroupMatch.setOnClickListener(new OnClickListener() {
                 @Override
                 public void onClick(View v) {
+                    mOverlayView.mService.getLastKnownLocation();
                     if (mOverlayView.mService.mLatlng == null) {
                         Toast.makeText(getContext(), R.string.error_location, Toast.LENGTH_SHORT).show();
                         return;
@@ -550,12 +581,8 @@ public class HomeView extends ContentView {
             bGroupMatch.setVisibility(VISIBLE);
             bGroupLeave.setVisibility(GONE);
         }
-    }
 
-    public void setFamily(MinimapView minimapView, ChatView chatView, PartyView partyView) {
-        vMinimap = minimapView;
-        vChat = chatView;
-        vParty = partyView;
+        showLoaded();
     }
 
     public void groupMatchStreamInit (final String groupJid) {
@@ -582,6 +609,10 @@ public class HomeView extends ContentView {
                     public void run() {
                         try {
                             mOverlayView.mService.mMapperChannel.connect();
+                            mOverlayView.mService.mMapperChannel.streamStatus();
+
+                            mOverlayView.mService.startLocationListener();
+                            mOverlayView.mService.startOrientationListener();
 
                             mOverlayView.mService.mMapperChannel.streamInit(mOverlayView.mService.mMedia, groupJid);
 
@@ -612,6 +643,10 @@ public class HomeView extends ContentView {
                             Log.e(TAG, "streamInit", e);
                             Toast.makeText(getContext(), R.string.error_streaminit, Toast.LENGTH_SHORT).show();
                             mOverlayView.mService.mMapperChannel.disconnect();
+
+                            mOverlayView.mService.stopLocationListener();
+                            mOverlayView.mService.stopOrientationListener();
+
                             mOverlayView.mService.runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {

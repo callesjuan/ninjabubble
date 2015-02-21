@@ -17,6 +17,8 @@ public class ContentView extends LinearLayout {
 
     public ProgressBar mLoadingAnimation;
 
+    public boolean mHasLoaded = false;
+
     public ContentView(Context context, OverlayView overlayView) {
         super(context);
 
@@ -37,6 +39,8 @@ public class ContentView extends LinearLayout {
         mContentLayout.setOrientation(VERTICAL);
         mContentLayout.setLayoutParams(new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         addView(mContentLayout);
+
+        showLoading();
     }
 
     public void showLoading() {

@@ -8,17 +8,7 @@ import android.widget.LinearLayout;
  */
 public class PartyView extends ContentView {
 
-    public HomeView vHome;
-    public MinimapView vMinimap;
-    public ChatView vChat;
-
     public PartyView(Context context, OverlayView overlayView) {
         super(context, overlayView);
-    }
-
-    public void setFamily(HomeView homeView, MinimapView minimapView, ChatView chatView) {
-        vHome = homeView;
-        vMinimap = minimapView;
-        vChat = chatView;
     }
 }

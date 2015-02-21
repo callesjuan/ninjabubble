@@ -719,7 +719,8 @@ public class MapperChannel implements ChatMessageListener {
                             return;
                         }
 
-                        mService.mOverlayView.disableMenu();
+                        mService.stopLocationListener();
+                        mService.stopOrientationListener();
 
                         mService.mOverlayView.vHome.bStreamPause.setVisibility(View.GONE);
                         mService.mOverlayView.vHome.bStreamResume.setVisibility(View.VISIBLE);
@@ -730,7 +731,9 @@ public class MapperChannel implements ChatMessageListener {
                         mService.mOverlayView.vHome.mOverlayView.imHome.setImageBitmap(mService.mOverlayView.mBmpOff);
 
                         Toast.makeText(mService, R.string.error_connection, Toast.LENGTH_SHORT);
-                        mService.mOverlayView.vHome.showLoaded();
+
+                        mService.mOverlayView.disableMenu();
+                        mService.mOverlayView.vHome.show();
                     }
                 });
             }
@@ -756,6 +759,10 @@ public class MapperChannel implements ChatMessageListener {
                 });
                 try {
                     streamStatus();
+
+                    mService.startLocationListener();
+                    mService.startOrientationListener();
+
                     streamResume();
 
                     try {
@@ -768,8 +775,6 @@ public class MapperChannel implements ChatMessageListener {
                     mService.runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            mService.mOverlayView.enableMenu();
-
                             mService.mOverlayView.vHome.bStreamPause.setVisibility(View.VISIBLE);
                             mService.mOverlayView.vHome.bStreamResume.setVisibility(View.GONE);
 
@@ -778,6 +783,7 @@ public class MapperChannel implements ChatMessageListener {
 
                             mService.mOverlayView.imHome.setImageBitmap(mService.mOverlayView.mBmpOn);
 
+                            mService.mOverlayView.enableMenu();
                             mService.mOverlayView.vHome.showLoaded();
                         }
                     });

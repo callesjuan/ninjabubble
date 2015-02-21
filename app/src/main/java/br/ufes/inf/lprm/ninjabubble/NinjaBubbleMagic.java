@@ -117,28 +117,11 @@ public class NinjaBubbleMagic extends Service {
                 try {
                     mLocationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
 
-                    if (!mLocationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-                        throw new Exception("GPS must be enabled");
-                    }
-                    if (!mLocationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
-                        throw new Exception("Network Provider must be enabled");
-                    }
-
-                    Location location = mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
-                    if (location == null) {
-                        location = mLocationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
-                    }
-                    if (location != null) {
-                        JSONArray latlng = new JSONArray();
-                        latlng.put(location.getLongitude());
-                        latlng.put(location.getLatitude());
-                        mLatlng = latlng;
-                        Log.i(TAG, "location set on lat:" + location.getLatitude() + " and lng:" + location.getLongitude());
+                    if (!mLocationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) || !mLocationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
+                        throw new Exception("GPS and Network Provider must be enabled");
                     }
 
                     mLocationListener = new MyLocationListener();
-                    mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, mMinTimeUpdate, mMinDistanceUpdate, mLocationListener);
-                    mLocationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, mMinTimeUpdate, mMinDistanceUpdate, mLocationListener);
                 } catch (Exception e) {
 
                     Log.e(TAG, "Error while retrieving GPS", e);
@@ -154,16 +137,11 @@ public class NinjaBubbleMagic extends Service {
 
                 try {
                     mSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-
 //                    mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
                     mAccelerometer = mSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
                     mMagnetometer = mSensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
 
                     mSensorEventListener = new MySensorEventListener();
-
-                    mSensorManager.registerListener(mSensorEventListener, mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
-                    mSensorManager.registerListener(mSensorEventListener, mMagnetometer, SensorManager.SENSOR_DELAY_NORMAL);
-
                 } catch (Exception e) {
                     Log.e(TAG, "Orientation sensors", e);
                 }
@@ -230,21 +208,14 @@ public class NinjaBubbleMagic extends Service {
                 mWindowManager.removeView(mLoading);
             } else if (msg.getData().getString("action").equals(ACTION_ONDESTROY)) {
                 try {
-                    mLocationManager.removeUpdates(mLocationListener);
+                    stopLocationListener();
                 } catch (Exception e) {
                     Log.w(TAG, "while releasing gps");
                 }
                 try {
-                    mSensorManager.unregisterListener(mSensorEventListener);
+                    stopOrientationListener();
                 } catch (Exception e) {
                     Log.w(TAG, "while releasing accelerometer and geometer");
-                }
-
-                try {
-                    mOverlayView.finish();
-                    Log.i(TAG, "OverlayView succesfully removed");
-                } catch (Exception e) {
-                    Log.w(TAG, "views were not added to windowmanager");
                 }
 
                 if (mPartyChannel != null) {
@@ -253,6 +224,13 @@ public class NinjaBubbleMagic extends Service {
 
                 if (mMapperChannel != null) {
                     mMapperChannel.disconnect();
+                }
+
+                try {
+                    mOverlayView.finish();
+                    Log.i(TAG, "OverlayView succesfully removed");
+                } catch (Exception e) {
+                    Log.w(TAG, "views were not added to windowmanager");
                 }
             }
         }
@@ -351,6 +329,52 @@ public class NinjaBubbleMagic extends Service {
 //        mConcurrentHandler.post(runnable);
         Handler handler = new Handler(mParallelLooper);
         handler.post(runnable);
+    }
+
+    public void getLastKnownLocation() {
+        try {
+            Location location = mLocationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+            if (location == null) {
+                location = mLocationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+            }
+            if (location != null) {
+                JSONArray latlng = new JSONArray();
+                latlng.put(location.getLongitude());
+                latlng.put(location.getLatitude());
+                mLatlng = latlng;
+                Log.i(TAG, "location set on lat:" + location.getLatitude() + " and lng:" + location.getLongitude());
+            }
+        } catch (Exception e) {}
+    }
+
+    public void startLocationListener() throws Exception{
+        try {
+            mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, mMinTimeUpdate, mMinDistanceUpdate, mLocationListener);
+            mLocationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, mMinTimeUpdate, mMinDistanceUpdate, mLocationListener);
+        } catch (Exception e) {
+            throw e;
+        }
+    }
+
+    public void stopLocationListener() {
+        try {
+            mLocationManager.removeUpdates(mLocationListener);
+        } catch (Exception e) {}
+    }
+
+    public void startOrientationListener() throws Exception {
+        try {
+            mSensorManager.registerListener(mSensorEventListener, mAccelerometer, SensorManager.SENSOR_DELAY_NORMAL);
+            mSensorManager.registerListener(mSensorEventListener, mMagnetometer, SensorManager.SENSOR_DELAY_NORMAL);
+        } catch (Exception e) {
+            throw e;
+        }
+    }
+
+    public void stopOrientationListener() {
+        try {
+            mSensorManager.unregisterListener(mSensorEventListener);
+        } catch (Exception e) {}
     }
 
     public class MyLocationListener implements LocationListener {
@@ -463,24 +487,23 @@ public class NinjaBubbleMagic extends Service {
 
     public class MySensorEventListener implements SensorEventListener {
 
-        float []mGravity;
-        float []mGeomagnetic;
+        public float []mGravity;
+        public float []mGeomagnetic;
 
-        Float mAzimut;
-        Float mAzimutInDegress;
-        Float mCurrentDegree = 0f;
+        public Float mAzimut;
+        public Float mAzimutInDegress;
+        public Float mCurrentDegree = 0f;
 
         @Override
         public void onSensorChanged(SensorEvent event) {
             try {
-                if (mStream != null && mStream.getString("status").equals("streaming")) {
+                if (mStream != null && mStream.getString("status").equals("streaming") && mOverlayView.vMinimap != null &&  mOverlayView.vMinimap.mHasLoaded) {
                     if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
                         mGravity = event.values;
                     } else if (event.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
                         mGeomagnetic = event.values;
                     }
                     if (mGravity != null && mGeomagnetic != null) {
-                        final int selfId = R.drawable.self;
                         float R[] = new float[9];
                         float I[] = new float[9];
                         boolean success = SensorManager.getRotationMatrix(R, I, mGravity, mGeomagnetic);
@@ -524,17 +547,6 @@ public class NinjaBubbleMagic extends Service {
 //                                    mCurrentDegree = mAzimutInDegress;
 
                                     mCurrentDegree = mAzimutInDegress;
-
-                                    Bitmap bmpOriginal = BitmapFactory.decodeResource(getResources(), selfId);
-                                    Bitmap bmResult = Bitmap.createBitmap(bmpOriginal.getWidth(), bmpOriginal.getHeight(), Bitmap.Config.ARGB_8888);
-                                    Canvas tempCanvas = new Canvas(bmResult);
-                                    tempCanvas.rotate(mCurrentDegree, bmpOriginal.getWidth()/2, bmpOriginal.getHeight()/2);
-                                    tempCanvas.drawBitmap(bmpOriginal, 0, 0, null);
-
-                                    Drawable drawable = new BitmapDrawable(getResources(), bmResult);
-
-                                    mOverlayView.vMinimap.mSelf.setMarker(drawable);
-                                    mOverlayView.vMinimap.mMapView.invalidate();
                                 }
                             });
                         }

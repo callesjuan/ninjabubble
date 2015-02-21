@@ -238,31 +238,34 @@ public class OverlayView {
             int contentWidth = (int) (overlayWidth);
             int contentHeight = (int) (overlayHeight);
             mContentLayout.setLayoutParams(new LinearLayout.LayoutParams(contentWidth, contentHeight));
-
-            vHome = new HomeView(mService, this);
-            vMinimap = new MinimapView(mService, this);
-            vChat = new ChatView(mService, this);
-            vParty = new PartyView(mService, this);
-
-            vHome.setFamily(vMinimap, vChat, vParty);
-            vMinimap.setFamily(vHome, vChat, vParty);
-            vChat.setFamily(vHome, vMinimap, vParty);
-            vParty.setFamily(vHome, vMinimap, vChat);
-
-            mContentLayout.addView(vHome);
-
             mParentLayout.addView(mContentLayout);
         }
 
         mWindowManager.addView(mParentLayout, paramsParentLayout);
+
+        vHome = new HomeView(mService, this);
+        vHome.show();
     }
 
     public void finish() throws Exception {
         try {
-            vMinimap.mMapView.getTileProvider().detach();
+            if (vMinimap != null) {
+                vMinimap.mMapView.getTileProvider().detach();
+            }
+        }
+        catch (Exception e) {
+            throw e;
+        }
 
-            mWindowManager.removeView(mNinjaHead);
+        try {
             mWindowManager.removeView(mParentLayout);
+        }
+        catch (Exception e) {
+            throw e;
+        }
+
+        try {
+            mWindowManager.removeView(mNinjaHead);
         }
         catch (Exception e) {
             throw e;
@@ -270,14 +273,27 @@ public class OverlayView {
     }
 
     public void enableMenu() {
+        vMinimap = new MinimapView(mService, this);
+        vChat = new ChatView(mService, this);
+
         imMinimap.setEnabled(true);
         imChat.setEnabled(true);
 //        imParty.setEnabled(true);
     }
 
     public void disableMenu() {
+
         imMinimap.setEnabled(false);
         imChat.setEnabled(false);
+
+        if (vMinimap != null) {
+            try {
+                vMinimap.mMapView.getTileProvider().detach();
+            } catch (Exception e) {}
+        }
+
+        vMinimap = null;
+        vChat = null;
 //        imParty.setEnabled(false);
     }
 }

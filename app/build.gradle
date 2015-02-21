@@ -29,7 +29,11 @@ dependencies {
     compile 'org.igniterealtime.smack:smack-tcp:4.1.0-beta2'
     compile 'org.igniterealtime.smack:smack-extensions:4.1.0-beta2'
     //    compile('eu.geekplace.javapinning:java-pinning-jar:1.0.0')
-//    compile 'com.google.android.gms:play-services:6.5.87'
+    //    compile 'com.google.android.gms:play-services:6.5.87'
     compile 'org.osmdroid:osmdroid-android:4.3'
     compile 'org.slf4j:slf4j-android:1.7.9'
+    //    compile ('com.mapbox.mapboxsdk:mapbox-android-sdk:0.7.0@aar') {
+    //        transitive = true
+    //    }
+    compile files('libs/osmbonuspack_v5.1.jar')
 }
