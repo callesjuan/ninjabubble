@@ -117,8 +117,10 @@ public class NinjaBubbleMagic extends Service {
                 try {
                     mLocationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
 
-                    if (!(mLocationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) || mLocationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER))) {
-                        throw new Exception("GPS or Network Provider must be enabled");
+                    Log.i(TAG, "GPS enabled:" + mLocationManager.isProviderEnabled(LocationManager.GPS_PROVIDER));
+
+                    if (!(mLocationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) || !(mLocationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER))) {
+                        throw new Exception("GPS and Network Provider must be enabled");
                     }
 
                     mLocationListener = new MyLocationListener();
@@ -349,8 +351,13 @@ public class NinjaBubbleMagic extends Service {
 
     public void startLocationListener() throws Exception{
         try {
-            mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, mMinTimeUpdate, mMinDistanceUpdate, mLocationListener);
-            mLocationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, mMinTimeUpdate, mMinDistanceUpdate, mLocationListener);
+            if (mLocationListener == null) {
+                throw new Exception("locationListener is null");
+            }
+            mLocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, mLocationListener);
+            Log.i(TAG, "GPS...");
+            mLocationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, mLocationListener);
+            Log.i(TAG, "NETWORK...");
         } catch (Exception e) {
             throw e;
         }
@@ -439,10 +446,11 @@ public class NinjaBubbleMagic extends Service {
 
         @Override
         public void onLocationChanged(final Location location) {
-            Log.i(TAG, "lat:"+location.getLatitude()+" lng:"+location.getLongitude());
+//            Log.i(TAG, "lat:"+location.getLatitude()+" lng:"+location.getLongitude());
+            Log.i(TAG, "update:false provider:" + location.getProvider() + " lat:"+location.getLatitude()+" lng:"+location.getLongitude());
             if (isBetterLocation(location, mCurrentBestLocation)) {
                 mCurrentBestLocation = location;
-                Log.i(TAG, "isBetterLocation");
+//                Log.i(TAG, "isBetterLocation");
 
                 try {
                     JSONArray latlng = new JSONArray();
@@ -456,6 +464,8 @@ public class NinjaBubbleMagic extends Service {
                             public void run() {
                                 try {
                                     mMapperChannel.updateLatlng(mLatlng);
+                                    Toast.makeText(NinjaBubbleMagic.this, "update:true provider:" + location.getProvider() + " lat:"+location.getLatitude()+" lng:"+location.getLongitude(), Toast.LENGTH_SHORT).show();
+                                    Log.i(TAG, "update:true provider:" + location.getProvider() + " lat:"+location.getLatitude()+" lng:"+location.getLongitude());
                                 } catch (Exception e) {
                                     Log.e(TAG, "onLocationChanged", e);
                                 }
@@ -476,12 +486,14 @@ public class NinjaBubbleMagic extends Service {
 
         @Override
         public void onProviderEnabled(String provider) {
-
+            Log.i(TAG, provider + " went on");
+            Toast.makeText(NinjaBubbleMagic.this, provider + " went on", Toast.LENGTH_SHORT).show();
         }
 
         @Override
         public void onProviderDisabled(String provider) {
-            Toast.makeText(NinjaBubbleMagic.this, R.string.error_locationprovideroff, Toast.LENGTH_SHORT).show();
+            Log.i(TAG, provider + " went off");
+            Toast.makeText(NinjaBubbleMagic.this, provider + " went off", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -560,19 +572,6 @@ public class NinjaBubbleMagic extends Service {
         @Override
         public void onAccuracyChanged(Sensor sensor, int accuracy) {
 
-        }
-
-        Drawable getRotateDrawable(final Bitmap b, final float angle) {
-            final BitmapDrawable drawable = new BitmapDrawable(getResources(), b) {
-                @Override
-                public void draw(final Canvas canvas) {
-                    canvas.save();
-                    canvas.rotate(angle, b.getWidth() / 2, b.getHeight() / 2);
-                    super.draw(canvas);
-                    canvas.restore();
-                }
-            };
-            return drawable;
         }
     }
 }
