@@ -191,6 +191,13 @@ public class OverlayView {
                 public void onClick(View v) {
                     if (mCurrentView == null || !mCurrentView.equals(V_MINIMAP)) {
                         mCurrentView = V_MINIMAP;
+
+                        if (vMinimap != null) {
+                            try {
+                                vMinimap.mMapView.getTileProvider().detach();
+                            } catch (Exception e) {}
+                        }
+                        vMinimap = new MinimapView(mService, OverlayView.this);
                         vMinimap.show();
                     }
                     imMinimap.setImageBitmap(mBmpMinimap);
