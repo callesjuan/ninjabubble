@@ -40,10 +40,12 @@
     <string name="error_groupleave">Could not leave group</string>
     <string name="error_groupmatch">Error while finding groups</string>
     <string name="error_groupmatch_empty">No found groups</string>
+    <string name="error_groupfetchmembers">Could not fetch party members</string>
     <string name="error_connection">Connection was lost, stream automatically paused</string>
     <string name="error_reconnection">Could not automatically resume stream, do it manually</string>
     <string name="error_location">Location unavailable</string>
     <string name="error_locationprovideroff">GPS provider went disabled</string>
+    <string name="error_ping">Error while sending minimap message</string>
 
     <string-array name="spin_media">
         <item>Twitcasting</item>

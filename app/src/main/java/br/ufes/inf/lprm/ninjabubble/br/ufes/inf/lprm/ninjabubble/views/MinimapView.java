@@ -7,6 +7,7 @@ import android.content.DialogInterface;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.util.Log;
@@ -18,10 +19,15 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.osmdroid.api.IMapController;
 import org.osmdroid.bonuspack.overlays.MapEventsOverlay;
 import org.osmdroid.bonuspack.overlays.MapEventsReceiver;
+import org.osmdroid.bonuspack.overlays.Marker;
+import org.osmdroid.bonuspack.overlays.MarkerInfoWindow;
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
 import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapController;
@@ -31,6 +37,7 @@ import org.osmdroid.views.overlay.Overlay;
 import org.osmdroid.views.overlay.OverlayItem;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import br.ufes.inf.lprm.ninjabubble.R;
 
@@ -42,14 +49,18 @@ public class MinimapView extends ContentView {
 
     public final String PING_ASSIST = "ASSIST";
     public final String PING_DANGER = "DANGER";
+    public final String PING_TARGET = "TARGET";
 
     public MapView mMapView;
     public IMapController mMapController;
-    public OverlayItem mSelf;
+    public Marker mSelf;
 
-    public ArrayList<OverlayItem> mMyPings = new ArrayList<OverlayItem>();
-    public ArrayList<OverlayItem> mPartyPings = new ArrayList<OverlayItem>();
-    public ArrayList<OverlayItem> mParty = new ArrayList<OverlayItem>();
+    public ArrayList<Marker> mParty = new ArrayList<Marker>();
+    public ArrayList<PingMarker> mPings = new ArrayList<PingMarker>();
+
+    public long mLastPan;
+    public final long PARTY_INTERVAL = 1000 * 10;
+    public final long PING_INTERVAL = 1000 * 10;
 
     public MapEventsOverlay mMapEventsOverlay;
     public MyMapEventsReceiver mMapEventsReceiver;
@@ -71,10 +82,11 @@ public class MinimapView extends ContentView {
     @Override
     public void show() {
         super.show();
+        super.showLoading();
 
         if (mHasLoaded) {
-            showLoaded();
-            return;
+//            super.showLoaded();
+//            return;
         }
         else {
             mHasLoaded = true;
@@ -99,26 +111,9 @@ public class MinimapView extends ContentView {
 
         try {
             loadSelf();
-
-            ArrayList<OverlayItem> items = new ArrayList<OverlayItem>();
-            items.add(mSelf);
-
-            Overlay overlay = new ItemizedIconOverlay<OverlayItem>(getContext(), items,
-                    new ItemizedIconOverlay.OnItemGestureListener<OverlayItem>() {
-                        @Override
-                        public boolean onItemSingleTapUp(int index, OverlayItem item) {
-                            return false;
-                        }
-
-                        @Override
-                        public boolean onItemLongPress(int index, OverlayItem item) {
-                            return false;
-                        }
-                    });
-
-            mMapView.getOverlays().add(overlay);
-
-            mMapController.setCenter(mSelf.getPoint());
+            loadParty();
+            loadPings();
+            mMapController.setCenter(mSelf.getPosition());
 
         } catch (Exception e) {
             Log.e(TAG, "could not retrieve current latlng");
@@ -134,14 +129,54 @@ public class MinimapView extends ContentView {
         bPan.setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View v) {
-                loadSelf();
-                mMapController.setCenter(mSelf.getPoint());
-                mMapView.invalidate();
+                mOverlayView.mService.runConcurrentThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        loadSelf();
+                        loadParty();
+                        loadPings();
+                        mOverlayView.mService.runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                mMapController.setCenter(mSelf.getPosition());
+                                mMapView.invalidate();
+                            }
+                        });
+                    }
+                });
             }
         });
         mOptions.addView(bPan);
 
         mDefaultTextColor = bPan.getCurrentTextColor();
+
+        final Button bPingTarget = new Button(getContext());
+        bPingTarget.setText(PING_TARGET);
+        bPingTarget.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (mPing == null) {
+                    mPing = PING_TARGET;
+                    bPingTarget.setTextColor(Color.parseColor("red"));
+                    mLastPingButton = bPingTarget;
+
+                    mMapView.getOverlays().add(mMapEventsOverlay);
+                } else if (mPing.equals(PING_TARGET)) {
+                    mPing = null;
+                    bPingTarget.setTextColor(mDefaultTextColor);
+                    mLastPingButton = null;
+
+                    mMapView.getOverlays().remove(mMapEventsOverlay);
+                } else if (!mPing.equals(PING_TARGET)) {
+                    mPing = PING_TARGET;
+                    bPingTarget.setTextColor(Color.parseColor("red"));
+
+                    mLastPingButton.setTextColor(mDefaultTextColor);
+                    mLastPingButton = bPingTarget;
+                }
+            }
+        });
+        mOptions.addView(bPingTarget);
 
         final Button bPingAssist = new Button(getContext());
         bPingAssist.setText(PING_ASSIST);
@@ -150,7 +185,7 @@ public class MinimapView extends ContentView {
             public void onClick(View v) {
                 if (mPing == null) {
                     mPing = PING_ASSIST;
-                    bPingAssist.setTextColor(0xff0000);
+                    bPingAssist.setTextColor(Color.parseColor("red"));
                     mLastPingButton = bPingAssist;
 
                     mMapView.getOverlays().add(mMapEventsOverlay);
@@ -162,7 +197,7 @@ public class MinimapView extends ContentView {
                     mMapView.getOverlays().remove(mMapEventsOverlay);
                 } else if (!mPing.equals(PING_ASSIST)) {
                     mPing = PING_ASSIST;
-                    bPingAssist.setTextColor(0xff0000);
+                    bPingAssist.setTextColor(Color.parseColor("red"));
 
                     mLastPingButton.setTextColor(mDefaultTextColor);
                     mLastPingButton = bPingAssist;
@@ -178,7 +213,7 @@ public class MinimapView extends ContentView {
             public void onClick(View v) {
                 if (mPing == null) {
                     mPing = PING_DANGER;
-                    bPingDanger.setTextColor(0xFF0000);
+                    bPingDanger.setTextColor(Color.parseColor("red"));
                     mLastPingButton = bPingDanger;
 
                     mMapView.getOverlays().add(mMapEventsOverlay);
@@ -192,7 +227,7 @@ public class MinimapView extends ContentView {
                     mMapView.invalidate();
                 } else if (!mPing.equals(PING_DANGER)) {
                     mPing = PING_DANGER;
-                    bPingDanger.setTextColor(0xFF0000);
+                    bPingDanger.setTextColor(Color.parseColor("red"));
 
                     mLastPingButton.setTextColor(mDefaultTextColor);
                     mLastPingButton = bPingDanger;
@@ -201,7 +236,7 @@ public class MinimapView extends ContentView {
         });
         mOptions.addView(bPingDanger);
 
-        showLoaded();
+        super.showLoaded();
     }
 
     public void loadSelf() {
@@ -227,23 +262,107 @@ public class MinimapView extends ContentView {
             GeoPoint myLatlng = new GeoPoint(lat, lng);
 
             if (mSelf == null) {
-                mSelf = new OverlayItem("self", "current position", myLatlng);
+                mSelf = new Marker(mMapView);
+                mSelf.setTitle("Self");
+                mSelf.setSnippet(mOverlayView.mService.mHashtags);
+
+                mMapView.getOverlays().add(mSelf);
             }
-            mSelf.setMarker(drawable);
+            mSelf.setPosition(myLatlng);
+            mSelf.setIcon(drawable);
 
         } catch (Exception e) {
             Log.e(TAG, "could not retrieve self", e);
         }
     }
 
-    public class MyMapEventsReceiver implements MapEventsReceiver {
-        @Override
-        public boolean singleTapConfirmedHelper(GeoPoint geoPoint) {
-            return false;
+    public void loadParty() {
+        if (System.currentTimeMillis() - mLastPan < PARTY_INTERVAL) {
+            return;
         }
 
+        mMapView.getOverlays().removeAll(mParty);
+        mParty.clear();
+
+        try {
+            mOverlayView.mService.mMapperChannel.groupFetchMembers();
+        } catch (Exception e) {
+            Log.e(TAG, "loadParty", e);
+            Toast.makeText(getContext(), R.string.error_groupfetchmembers, Toast.LENGTH_SHORT).show();
+        }
+
+        mParty = new ArrayList<Marker>();
+
+        JSONArray members = mOverlayView.mService.mParty;
+        for (int i = 0; i < members.length(); i++) {
+            Marker marker = new Marker(mMapView);
+            try {
+                JSONObject member = members.getJSONObject(i);
+                marker.setTitle(member.getString("jid"));
+                marker.setSnippet(member.getString("hashtags"));
+
+                JSONArray latlng = member.getJSONArray("latlng");
+                GeoPoint geoPoint = new GeoPoint(latlng.getDouble(1), latlng.getDouble(0));
+                marker.setPosition(geoPoint);
+                marker.setIcon(getResources().getDrawable(R.drawable.others));
+
+                mParty.add(marker);
+                mMapView.getOverlays().add(marker);
+            } catch (Exception e) {}
+        }
+    }
+
+    public void loadPing(String pingType, JSONArray latlng, String details, String streamId, long dismiss) {
+        Drawable drawable = null;
+
+        if (pingType.equals(PING_TARGET)) {
+            drawable = getResources().getDrawable(R.drawable.ping_target);
+        } else if (pingType.equals(PING_ASSIST)) {
+            drawable = getResources().getDrawable(R.drawable.ping_assist);
+        } else if (pingType.equals(PING_DANGER)) {
+            drawable = getResources().getDrawable(R.drawable.ping_danger);
+        }
+
+        GeoPoint geoPoint = null;
+        try {
+            geoPoint = new GeoPoint(latlng.getDouble(1), latlng.getDouble(0));
+        } catch (Exception e) {}
+
+        PingMarker ping = new PingMarker(mMapView);
+        ping.setPosition(geoPoint);
+        ping.setIcon(drawable);
+        ping.setTitle(pingType);
+        ping.setSnippet(streamId.split("__")[0]);
+        ping.setSubDescription(details);
+        ping.setInfoWindow(new MarkerInfoWindow(R.layout.bonuspack_bubble, mMapView));
+        ping.setDismissTime(dismiss);
+
+        mPings.add(ping);
+        mMapView.getOverlays().add(ping);
+    }
+
+    public void loadPings() {
+        if (System.currentTimeMillis() - mLastPan < PING_INTERVAL) {
+            return;
+        }
+
+        long now = System.currentTimeMillis();
+        ArrayList<PingMarker> removable = new ArrayList<PingMarker>();
+
+        for (int i = 0; i < mPings.size(); i++) {
+            PingMarker ping = mPings.get(i);
+            if (now > ping.mDismissTime) {
+                removable.add(ping);
+            }
+        }
+        mMapView.getOverlays().removeAll(removable);
+        mParty.removeAll(removable);
+        removable.clear();
+    }
+
+    public class MyMapEventsReceiver implements MapEventsReceiver {
         @Override
-        public boolean longPressHelper(final GeoPoint geoPoint) {
+        public boolean singleTapConfirmedHelper(final GeoPoint geoPoint) {
             AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
             builder.setTitle(mPing);
             builder.setMessage("Obs.:");
@@ -255,34 +374,37 @@ public class MinimapView extends ContentView {
                 @Override
                 public void onClick(DialogInterface dialog, int which) {
                     Log.i(TAG, String.format("%s~%f+%f~%s", mPing, geoPoint.getLatitude(), geoPoint.getLongitude(), txtObs.getText().toString()));
+                    final String pingString = mPing;
+
                     mPing = null;
                     mLastPingButton.setTextColor(mDefaultTextColor);
                     mLastPingButton = null;
                     mMapView.getOverlays().remove(mMapEventsOverlay);
 
-                    OverlayItem ping = new OverlayItem(mPing, txtObs.getText().toString(), geoPoint);
-                    Drawable drawable = getResources().getDrawable(android.R.drawable.ic_menu_myplaces);
-                    ping.setMarker(drawable);
+                    final JSONArray latlng = new JSONArray();
 
-                    ArrayList<OverlayItem> items = new ArrayList<OverlayItem>();
-                    items.add(ping);
+                    try {
+                        latlng.put(geoPoint.getLongitude());
+                        latlng.put(geoPoint.getLatitude());
+                    } catch (Exception e) {}
 
-                    Overlay overlay = new ItemizedIconOverlay<OverlayItem>(getContext(), items,
-                        new ItemizedIconOverlay.OnItemGestureListener<OverlayItem>() {
-                            @Override
-                            public boolean onItemSingleTapUp(int index, OverlayItem item) {
-                                Log.i(TAG, item.getSnippet());
-                                return false;
+                    mOverlayView.mService.runConcurrentThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                if (pingString.equals(PING_TARGET)) {
+                                    mOverlayView.mService.mPartyChannel.pingTargetOut(latlng, txtObs.getText().toString());
+                                } else if (pingString.equals(PING_ASSIST)) {
+                                    mOverlayView.mService.mPartyChannel.pingAssistOut(latlng, txtObs.getText().toString());
+                                } else if (pingString.equals(PING_DANGER)) {
+                                    mOverlayView.mService.mPartyChannel.pingDangerOut(latlng, txtObs.getText().toString());
+                                }
+                            } catch (Exception e) {
+                                Toast.makeText(getContext(), R.string.error_ping, Toast.LENGTH_SHORT).show();
+                                return;
                             }
-
-                            @Override
-                            public boolean onItemLongPress(int index, OverlayItem item) {
-                                return false;
-                            }
-                        });
-
-                    mMapView.getOverlays().add(overlay);
-                    mMapView.invalidate();
+                        }
+                    });
                 }
             });
             builder.setNegativeButton(android.R.string.cancel, new DialogInterface.OnClickListener() {
@@ -296,6 +418,11 @@ public class MinimapView extends ContentView {
             dialog.getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);
             dialog.show();
 
+            return false;
+        }
+
+        @Override
+        public boolean longPressHelper(GeoPoint geoPoint) {
             return false;
         }
     };

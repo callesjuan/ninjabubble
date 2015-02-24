@@ -446,8 +446,7 @@ public class NinjaBubbleMagic extends Service {
 
         @Override
         public void onLocationChanged(final Location location) {
-//            Log.i(TAG, "lat:"+location.getLatitude()+" lng:"+location.getLongitude());
-            Log.i(TAG, "update:false provider:" + location.getProvider() + " lat:"+location.getLatitude()+" lng:"+location.getLongitude());
+//            Log.i(TAG, "update:false provider:" + location.getProvider() + " lat:"+location.getLatitude()+" lng:"+location.getLongitude());
             if (isBetterLocation(location, mCurrentBestLocation)) {
                 mCurrentBestLocation = location;
 //                Log.i(TAG, "isBetterLocation");
@@ -464,7 +463,7 @@ public class NinjaBubbleMagic extends Service {
                             public void run() {
                                 try {
                                     mMapperChannel.updateLatlng(mLatlng);
-                                    Toast.makeText(NinjaBubbleMagic.this, "update:true provider:" + location.getProvider() + " lat:"+location.getLatitude()+" lng:"+location.getLongitude(), Toast.LENGTH_SHORT).show();
+//                                    Toast.makeText(NinjaBubbleMagic.this, "update:true provider:" + location.getProvider() + " lat:"+location.getLatitude()+" lng:"+location.getLongitude(), Toast.LENGTH_SHORT).show();
                                     Log.i(TAG, "update:true provider:" + location.getProvider() + " lat:"+location.getLatitude()+" lng:"+location.getLongitude());
                                 } catch (Exception e) {
                                     Log.e(TAG, "onLocationChanged", e);

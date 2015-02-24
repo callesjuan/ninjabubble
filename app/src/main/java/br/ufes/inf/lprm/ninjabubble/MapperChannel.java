@@ -258,6 +258,11 @@ public class MapperChannel implements ChatMessageListener {
         }
         try {
             mService.mStream = args.getJSONObject("stream");
+
+            if (args.has("members")) {
+                mService.mParty = args.getJSONArray("members");
+            }
+
             unlock();
         }
         catch (Exception e) {
@@ -336,6 +341,11 @@ public class MapperChannel implements ChatMessageListener {
         }
         try {
             mService.mStream = args.getJSONObject("stream");
+
+            if (args.has("members")) {
+                mService.mParty = args.getJSONArray("members");
+            }
+
             unlock();
         }
         catch (Exception e) {

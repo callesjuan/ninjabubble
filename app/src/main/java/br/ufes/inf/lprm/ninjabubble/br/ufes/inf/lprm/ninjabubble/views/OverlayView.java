@@ -45,6 +45,12 @@ public class OverlayView {
     public ChatView vChat;
     public PartyView vParty;
 
+    public String mCurrentView;
+    public final String V_HOME = "HOME";
+    public final String V_MINIMAP = "MINIMAP";
+    public final String V_CHAT = "CHAT";
+    public final String V_PARTY = "PARTY";
+
     public Bitmap mBmpOn;
     public Bitmap mBmpOff;
     public Bitmap mBmpMinimap;
@@ -165,6 +171,7 @@ public class OverlayView {
             imHome.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
+                    mCurrentView = V_HOME;
                     vHome.show();
                 }
             });
@@ -182,7 +189,11 @@ public class OverlayView {
             imMinimap.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    vMinimap.show();
+                    if (mCurrentView == null || !mCurrentView.equals(V_MINIMAP)) {
+                        mCurrentView = V_MINIMAP;
+                        vMinimap.show();
+                    }
+                    imMinimap.setImageBitmap(mBmpMinimap);
                 }
             });
             mMenuLayout.addView(imMinimap);
@@ -199,7 +210,11 @@ public class OverlayView {
             imChat.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    vChat.show();
+                    if (mCurrentView == null || !mCurrentView.equals(V_CHAT)) {
+                        mCurrentView = V_CHAT;
+                        vChat.show();
+                    }
+                    imChat.setImageBitmap(mBmpChat);
                 }
             });
             mMenuLayout.addView(imChat);
@@ -215,6 +230,7 @@ public class OverlayView {
             imHide.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
+                    mCurrentView = V_HOME;
                     vHome.show();
                     mParentLayout.setVisibility(View.GONE);
                     mNinjaHead.setVisibility(View.VISIBLE);
@@ -257,23 +273,17 @@ public class OverlayView {
                 vMinimap.mMapView.getTileProvider().detach();
             }
         }
-        catch (Exception e) {
-            throw e;
-        }
+        catch (Exception e) {}
 
         try {
             mWindowManager.removeView(mParentLayout);
         }
-        catch (Exception e) {
-            throw e;
-        }
+        catch (Exception e) {}
 
         try {
             mWindowManager.removeView(mNinjaHead);
         }
-        catch (Exception e) {
-            throw e;
-        }
+        catch (Exception e) {}
     }
 
     public void enableMenu() {

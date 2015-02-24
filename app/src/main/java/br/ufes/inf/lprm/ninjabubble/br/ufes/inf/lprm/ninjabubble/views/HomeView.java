@@ -34,7 +34,7 @@ public class HomeView extends ContentView {
     public Button bGroupLeave;
 
     public long mLastLookup = 0;
-    public final long LOOKUP_INTERVAL = 1000 * 30;
+    public final long LOOKUP_INTERVAL = 1000 * 10;
     public Dialog mLookupDialog;
     private double mLookupRadius = 5.0;
 
