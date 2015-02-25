@@ -91,7 +91,35 @@ public class PartyChannel implements MessageListener {
             }
         }
         catch (Exception e) {
-            Log.e(TAG, e.getMessage(), e);
+            //Log.e(TAG, e.getMessage(), e);
+            chatMessageIn(message);
+        }
+    }
+
+    public void chatMessageIn(final Message message) {
+        if (mService.mOverlayView.vChat != null && mService.mOverlayView.vChat.mAdapter != null) {
+            mService.runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        mService.mOverlayView.vChat.mAdapter.add(message.getBody());
+                        mService.mOverlayView.vChat.mAdapter.notifyDataSetChanged();
+                        mService.mOverlayView.vChat.mListView.setSelection(mService.mOverlayView.vChat.mListView.getCount()-1);
+                    } catch (Exception e) {
+                        Log.e(TAG, "chatMessageIn", e);
+                    }
+                }
+            });
+        }
+    }
+
+    public void chatMessageOut(String message) {
+        try {
+            Date now = new Date();
+            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+            mChat.sendMessage(mService.mSource.getString("jid")+" ("+sdf.format(now)+"):"+System.getProperty("line.separator")+"  "+message);
+        } catch (Exception e) {
+            Log.e(TAG, "chatMessageOut", e);
         }
     }
 
@@ -110,43 +138,6 @@ public class PartyChannel implements MessageListener {
                         mService.mOverlayView.imMinimap.setImageBitmap(mService.mOverlayView.mBmpMinimapNew);
                     }
                 });
-            } catch (Exception e) {}
-        }
-    }
-    public void pingAssistIn(JSONObject args) {
-        Log.i(TAG, args.toString());
-
-        if(mService.mOverlayView.vMinimap != null) {
-            try {
-                final PingMarker ping = mService.mOverlayView.vMinimap.addPing(mService.mOverlayView.vMinimap.PING_ASSIST, args.getJSONArray("assist_latlng"), args.getString("details"), args.getString("stream_id"), args.getLong("stamp"));
-                mService.mOverlayView.vMinimap.mMapView.getOverlays().add(ping);
-                mService.runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        mService.mOverlayView.vMinimap.mMapView.invalidate();
-                        ping.showInfoWindow();
-                        mService.mOverlayView.imMinimap.setImageBitmap(mService.mOverlayView.mBmpMinimapNew);
-                    }
-                });
-            } catch (Exception e) {}
-        }
-    }
-    public void pingDangerIn(JSONObject args) {
-        Log.i(TAG, args.toString());
-
-        if(mService.mOverlayView.vMinimap != null) {
-            try {
-                final PingMarker ping = mService.mOverlayView.vMinimap.addPing(mService.mOverlayView.vMinimap.PING_DANGER, args.getJSONArray("danger_latlng"), args.getString("details"), args.getString("stream_id"), args.getLong("stamp"));
-                mService.mOverlayView.vMinimap.mMapView.getOverlays().add(ping);
-                mService.runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        mService.mOverlayView.vMinimap.mMapView.invalidate();
-                        ping.showInfoWindow();
-                        mService.mOverlayView.imMinimap.setImageBitmap(mService.mOverlayView.mBmpMinimapNew);
-                    }
-                });
-
             } catch (Exception e) {}
         }
     }
@@ -178,6 +169,25 @@ public class PartyChannel implements MessageListener {
         }
     }
 
+    public void pingAssistIn(JSONObject args) {
+        Log.i(TAG, args.toString());
+
+        if(mService.mOverlayView.vMinimap != null) {
+            try {
+                final PingMarker ping = mService.mOverlayView.vMinimap.addPing(mService.mOverlayView.vMinimap.PING_ASSIST, args.getJSONArray("assist_latlng"), args.getString("details"), args.getString("stream_id"), args.getLong("stamp"));
+                mService.mOverlayView.vMinimap.mMapView.getOverlays().add(ping);
+                mService.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        mService.mOverlayView.vMinimap.mMapView.invalidate();
+                        ping.showInfoWindow();
+                        mService.mOverlayView.imMinimap.setImageBitmap(mService.mOverlayView.mBmpMinimapNew);
+                    }
+                });
+            } catch (Exception e) {}
+        }
+    }
+
     public void pingAssistOut(JSONArray latlng, String details) throws Exception {
         Log.i(TAG, "pingAssistOut");
 
@@ -202,6 +212,26 @@ public class PartyChannel implements MessageListener {
         catch (Exception e) {
             Log.e(TAG, "pingAssistOut", e);
             throw e;
+        }
+    }
+
+    public void pingDangerIn(JSONObject args) {
+        Log.i(TAG, args.toString());
+
+        if(mService.mOverlayView.vMinimap != null) {
+            try {
+                final PingMarker ping = mService.mOverlayView.vMinimap.addPing(mService.mOverlayView.vMinimap.PING_DANGER, args.getJSONArray("danger_latlng"), args.getString("details"), args.getString("stream_id"), args.getLong("stamp"));
+                mService.mOverlayView.vMinimap.mMapView.getOverlays().add(ping);
+                mService.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        mService.mOverlayView.vMinimap.mMapView.invalidate();
+                        ping.showInfoWindow();
+                        mService.mOverlayView.imMinimap.setImageBitmap(mService.mOverlayView.mBmpMinimapNew);
+                    }
+                });
+
+            } catch (Exception e) {}
         }
     }
 

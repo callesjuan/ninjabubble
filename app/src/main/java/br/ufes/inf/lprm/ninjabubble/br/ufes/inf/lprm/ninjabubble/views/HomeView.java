@@ -108,6 +108,8 @@ public class HomeView extends ContentView {
                                             Toast.makeText(getContext(), R.string.error_groupjoin, Toast.LENGTH_SHORT).show();
                                         }
 
+                                        mOverlayView.mService.deleteChatHistory();
+
                                         mOverlayView.mService.runOnUiThread(new Runnable() {
                                             @Override
                                             public void run() {
@@ -535,6 +537,8 @@ public class HomeView extends ContentView {
                                             Toast.makeText(getContext(), R.string.error_groupjoin, Toast.LENGTH_SHORT).show();
                                         }
 
+                                        mOverlayView.mService.deleteChatHistory();
+
                                         mOverlayView.mService.runOnUiThread(new Runnable() {
                                             @Override
                                             public void run() {
@@ -627,6 +631,8 @@ public class HomeView extends ContentView {
                                 Toast.makeText(getContext(), R.string.error_groupjoin, Toast.LENGTH_SHORT).show();
                             }
 
+                            mOverlayView.mService.deleteChatHistory();
+
                             mOverlayView.mService.runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
@@ -689,6 +695,8 @@ public class HomeView extends ContentView {
                         Log.e(TAG, "groupLeave", e);
                         Toast.makeText(getContext(), R.string.error_groupjoin, Toast.LENGTH_SHORT).show();
                     }
+
+                    mOverlayView.mService.deleteChatHistory();
 
                     mOverlayView.mService.runOnUiThread(new Runnable() {
                         @Override

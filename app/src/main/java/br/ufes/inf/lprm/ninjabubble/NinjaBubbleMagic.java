@@ -27,6 +27,7 @@ import android.util.Log;
 import android.view.WindowManager;
 import android.view.animation.Animation;
 import android.view.animation.RotateAnimation;
+import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.Toast;
@@ -40,11 +41,21 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.util.ArrayList;
+import java.util.List;
+
 import br.ufes.inf.lprm.ninjabubble.br.ufes.inf.lprm.ninjabubble.views.OverlayView;
 
 public class NinjaBubbleMagic extends Service {
 
     public String TAG = "NinjaBubbleMagic";
+
+    public final String CHAT_FILENAME = "chat.json";
 
     public int mNotificationId = 1985;
 
@@ -573,5 +584,64 @@ public class NinjaBubbleMagic extends Service {
         public void onAccuracyChanged(Sensor sensor, int accuracy) {
 
         }
+    }
+
+    public List<String> retrieveChatHistory() {
+        ArrayList<String> history = new ArrayList<>();
+
+        try {
+            InputStream inputStream = openFileInput(CHAT_FILENAME);
+
+            if (inputStream != null) {
+                InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
+                BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
+
+                String receiveString = "";
+                StringBuilder stringBuilder = new StringBuilder();
+
+                while ( (receiveString = bufferedReader.readLine()) != null ) {
+                    stringBuilder.append(receiveString);
+                }
+
+                inputStream.close();
+
+                JSONArray jsonArray = new JSONArray(stringBuilder.toString());
+
+                for(int i = 0; i < jsonArray.length(); i++) {
+                    history.add(jsonArray.getString(i));
+                }
+            }
+        } catch (Exception e) {
+
+        }
+
+        //getExternalCacheDir();
+
+        return history;
+    }
+
+    public void persistChatHistory(ArrayAdapter<String> history) {
+        try {
+            JSONArray jsonArray = new JSONArray();
+            for (int i = 0; i < history.getCount(); i++) {
+                jsonArray.put(history.getItem(i));
+            }
+
+            OutputStreamWriter outputStreamWriter = new OutputStreamWriter(openFileOutput(CHAT_FILENAME, Context.MODE_PRIVATE));
+            outputStreamWriter.write(jsonArray.toString());
+            outputStreamWriter.close();
+        }
+        catch (Exception e) {
+            Log.e("Exception", "File write failed: " + e.toString());
+        }
+    }
+
+    public void deleteChatHistory() {
+        try {
+            Log.i(TAG, "deleteChatHistory");
+            File file = new File(getFilesDir().getPath() + "/" + CHAT_FILENAME);
+            boolean deleted = file.delete();
+            Log.i(TAG, "deleteChatHistory:"+deleted);
+        } catch (Exception e) {Log.e(TAG, "deleteChatHistory", e);}
     }
 }

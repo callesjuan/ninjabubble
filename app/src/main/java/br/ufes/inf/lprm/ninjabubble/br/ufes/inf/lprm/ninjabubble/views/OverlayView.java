@@ -10,8 +10,11 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+
+import java.util.List;
 
 import br.ufes.inf.lprm.ninjabubble.NinjaBubbleMagic;
 import br.ufes.inf.lprm.ninjabubble.R;
@@ -127,9 +130,10 @@ public class OverlayView {
                     WindowManager.LayoutParams.WRAP_CONTENT,
                     WindowManager.LayoutParams.WRAP_CONTENT,
                     WindowManager.LayoutParams.TYPE_SYSTEM_ALERT,
-                    WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+                    WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
                     PixelFormat.TRANSLUCENT
             );
+            paramsParentLayout.softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE;
 
             mParentLayout = new LinearLayout(mService);
             mParentLayout.setOrientation(LinearLayout.VERTICAL);
@@ -272,18 +276,22 @@ public class OverlayView {
             if (vMinimap != null) {
                 vMinimap.mMapView.getTileProvider().detach();
             }
-        }
-        catch (Exception e) {}
+        } catch (Exception e) {}
+
+        try {
+            if (vChat != null) {
+                final ArrayAdapter<String> chat = vChat.mAdapter;
+                mService.persistChatHistory(chat);
+            }
+        } catch (Exception e) {}
 
         try {
             mWindowManager.removeView(mParentLayout);
-        }
-        catch (Exception e) {}
+        } catch (Exception e) {}
 
         try {
             mWindowManager.removeView(mNinjaHead);
-        }
-        catch (Exception e) {}
+        } catch (Exception e) {}
     }
 
     public void enableMenu() {
@@ -305,6 +313,16 @@ public class OverlayView {
             try {
                 vMinimap.mMapView.getTileProvider().detach();
             } catch (Exception e) {}
+        }
+
+        if (vChat != null) {
+            final ArrayAdapter<String> chat = vChat.mAdapter;
+            mService.runConcurrentThread(new Runnable() {
+                @Override
+                public void run() {
+                    mService.persistChatHistory(chat);
+                }
+            });
         }
 
         vMinimap = null;
