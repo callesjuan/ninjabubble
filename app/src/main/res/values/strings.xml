@@ -41,6 +41,7 @@
     <string name="error_groupmatch">Error while finding groups</string>
     <string name="error_groupmatch_empty">No found groups</string>
     <string name="error_groupfetchmembers">Could not fetch party members</string>
+    <string name="error_groupfetchpings">Could not fetch pings</string>
     <string name="error_connection">Connection was lost, stream automatically paused</string>
     <string name="error_reconnection">Could not automatically resume stream, do it manually</string>
     <string name="error_location">Location unavailable</string>

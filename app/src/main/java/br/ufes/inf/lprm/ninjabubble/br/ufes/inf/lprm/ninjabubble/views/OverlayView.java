@@ -81,7 +81,7 @@ public class OverlayView {
             );
 
             mNinjaHead = new ImageView(mService);
-            mNinjaHead.setImageResource(R.drawable.ic_launcher);
+            mNinjaHead.setImageResource(R.drawable.my_launcher);
             mNinjaHead.setOnTouchListener(new View.OnTouchListener() {
                 private int TOUCH_TIME_THRESHOLD = 200;
                 private int initialX;
@@ -179,7 +179,7 @@ public class OverlayView {
 
             bmap = BitmapFactory.decodeResource(mService.getResources(), R.drawable.map_marker_round);
             mBmpMinimap = Bitmap.createScaledBitmap(bmap, imSize, imSize, true);
-            bmap = BitmapFactory.decodeResource(mService.getResources(), R.drawable.map_marker_round_new);
+            bmap = BitmapFactory.decodeResource(mService.getResources(), R.drawable.map_marker_round_new_2);
             mBmpMinimapNew = Bitmap.createScaledBitmap(bmap, imSize, imSize, true);
 
             imMinimap = new ImageView(mService);
@@ -191,13 +191,6 @@ public class OverlayView {
                 public void onClick(View v) {
                     if (mCurrentView == null || !mCurrentView.equals(V_MINIMAP)) {
                         mCurrentView = V_MINIMAP;
-
-                        if (vMinimap != null) {
-                            try {
-                                vMinimap.mMapView.getTileProvider().detach();
-                            } catch (Exception e) {}
-                        }
-                        vMinimap = new MinimapView(mService, OverlayView.this);
                         vMinimap.show();
                     }
                     imMinimap.setImageBitmap(mBmpMinimap);
@@ -207,7 +200,7 @@ public class OverlayView {
 
             bmap = BitmapFactory.decodeResource(mService.getResources(), R.drawable.group_round);
             mBmpChat = Bitmap.createScaledBitmap(bmap, imSize, imSize, true);
-            bmap = BitmapFactory.decodeResource(mService.getResources(), R.drawable.group_round_new);
+            bmap = BitmapFactory.decodeResource(mService.getResources(), R.drawable.group_round_new_2);
             mBmpChatNew = Bitmap.createScaledBitmap(bmap, imSize, imSize, true);
 
             imChat = new ImageView(mService);
@@ -296,6 +289,7 @@ public class OverlayView {
     public void enableMenu() {
         vMinimap = new MinimapView(mService, this);
         vChat = new ChatView(mService, this);
+        vParty = new PartyView(mService, this);
 
         imMinimap.setEnabled(true);
         imChat.setEnabled(true);
@@ -315,6 +309,7 @@ public class OverlayView {
 
         vMinimap = null;
         vChat = null;
+        vParty = null;
 //        imParty.setEnabled(false);
     }
 }

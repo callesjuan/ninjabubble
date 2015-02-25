@@ -14,9 +14,12 @@ import org.jivesoftware.smackx.xdata.packet.DataForm;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Timer;
 import java.util.TimerTask;
+
+import br.ufes.inf.lprm.ninjabubble.br.ufes.inf.lprm.ninjabubble.views.PingMarker;
 
 /**
  * Created by Juan on 11/02/2015.
@@ -27,9 +30,6 @@ public class PartyChannel implements MessageListener {
 
     public NinjaBubbleMagic mService;
     public MultiUserChat mChat;
-
-    public final int PING_DURATION_SECONDS = 60 * 5;
-    public final long PING_DURATION_MILLIS = 1000 * 60 * 5;
 
     public PartyChannel (NinjaBubbleMagic service) {
         mService = service;
@@ -46,28 +46,9 @@ public class PartyChannel implements MessageListener {
         mChat.addMessageListener(this);
 
         try {
-            DiscussionHistory history = new DiscussionHistory();
-            history.setSeconds(PING_DURATION_SECONDS);
-
-            if (mChat.createOrJoin(mService.mStream.getString("jid"), null, history, SmackConfiguration.getDefaultPacketReplyTimeout())) {
+            if (mChat.createOrJoin(mService.mStream.getString("jid"))) {
                 mChat.sendConfigurationForm(new Form(DataForm.Type.submit));
             }
-
-            mService.runConcurrentThread(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        Message old = mChat.nextMessage();
-                        while (old != null) {
-                            try {
-                                processMessage(old);
-                            } catch (Exception e) {
-                            }
-                            old = mChat.nextMessage();
-                        }
-                    } catch (Exception e) {}
-                }
-            });
         }
         catch (Exception e) {
             Log.e(TAG, String.format("trouble joining muc room %s", group_fulljid), e);
@@ -99,21 +80,6 @@ public class PartyChannel implements MessageListener {
             args.put("from", message.getFrom());
             args.put("to", message.getTo());
 
-            if(parsed.getString("func").contains("ping")) {
-                long dismissTime;
-                if (delay != null) {
-                    long delayDiff = System.currentTimeMillis() - delay.getStamp().getTime();
-                    if (delayDiff > PING_DURATION_MILLIS || delayDiff < 0) {
-                        return;
-                    } else {
-                        dismissTime = System.currentTimeMillis() + (PING_DURATION_MILLIS - delayDiff);
-                    }
-                } else {
-                    dismissTime = System.currentTimeMillis() + PING_DURATION_MILLIS;
-                }
-                args.put("dismiss", dismissTime);
-            }
-
             if (parsed.getString("func").equals("ping_target")) {
                 pingTargetIn(args);
             }
@@ -130,15 +96,17 @@ public class PartyChannel implements MessageListener {
     }
 
     public void pingTargetIn(JSONObject args) {
-        Log.i(TAG, args.toString());
+        Log.i(TAG, "pingTargetIn:"+args.toString());
 
         if(mService.mOverlayView.vMinimap != null) {
             try {
-                mService.mOverlayView.vMinimap.loadPing(mService.mOverlayView.vMinimap.PING_TARGET, args.getJSONArray("target_latlng"), args.getString("details"), args.getString("stream_id"), args.getLong("dismiss"));
+                final PingMarker ping = mService.mOverlayView.vMinimap.addPing(mService.mOverlayView.vMinimap.PING_TARGET, args.getJSONArray("target_latlng"), args.getString("details"), args.getString("stream_id"), args.getLong("stamp"));
+                mService.mOverlayView.vMinimap.mMapView.getOverlays().add(ping);
                 mService.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
                         mService.mOverlayView.vMinimap.mMapView.invalidate();
+                        ping.showInfoWindow();
                         mService.mOverlayView.imMinimap.setImageBitmap(mService.mOverlayView.mBmpMinimapNew);
                     }
                 });
@@ -150,11 +118,13 @@ public class PartyChannel implements MessageListener {
 
         if(mService.mOverlayView.vMinimap != null) {
             try {
-                mService.mOverlayView.vMinimap.loadPing(mService.mOverlayView.vMinimap.PING_ASSIST, args.getJSONArray("assist_latlng"), args.getString("details"), args.getString("stream_id"), args.getLong("dismiss"));
+                final PingMarker ping = mService.mOverlayView.vMinimap.addPing(mService.mOverlayView.vMinimap.PING_ASSIST, args.getJSONArray("assist_latlng"), args.getString("details"), args.getString("stream_id"), args.getLong("stamp"));
+                mService.mOverlayView.vMinimap.mMapView.getOverlays().add(ping);
                 mService.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
                         mService.mOverlayView.vMinimap.mMapView.invalidate();
+                        ping.showInfoWindow();
                         mService.mOverlayView.imMinimap.setImageBitmap(mService.mOverlayView.mBmpMinimapNew);
                     }
                 });
@@ -166,11 +136,13 @@ public class PartyChannel implements MessageListener {
 
         if(mService.mOverlayView.vMinimap != null) {
             try {
-                mService.mOverlayView.vMinimap.loadPing(mService.mOverlayView.vMinimap.PING_DANGER, args.getJSONArray("danger_latlng"), args.getString("details"), args.getString("stream_id"), args.getLong("dismiss"));
+                final PingMarker ping = mService.mOverlayView.vMinimap.addPing(mService.mOverlayView.vMinimap.PING_DANGER, args.getJSONArray("danger_latlng"), args.getString("details"), args.getString("stream_id"), args.getLong("stamp"));
+                mService.mOverlayView.vMinimap.mMapView.getOverlays().add(ping);
                 mService.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
                         mService.mOverlayView.vMinimap.mMapView.invalidate();
+                        ping.showInfoWindow();
                         mService.mOverlayView.imMinimap.setImageBitmap(mService.mOverlayView.mBmpMinimapNew);
                     }
                 });
@@ -183,6 +155,9 @@ public class PartyChannel implements MessageListener {
         Log.i(TAG, "pingTargetOut");
 
         try {
+            Date sinceDate = new Date(System.currentTimeMillis());
+            SimpleDateFormat stampFormat = new SimpleDateFormat(mService.mMapperChannel.STAMP_PATTERN);
+            String stamp = stampFormat.format(sinceDate);
 
             JSONObject msg = new JSONObject()
                 .put("func", "ping_target")
@@ -190,6 +165,8 @@ public class PartyChannel implements MessageListener {
                     .put("stream_id", mService.mStream.getString("stream_id"))
                     .put("target_latlng", latlng)
                     .put("details", details)
+                    .put("author", mService.mNick)
+                    .put("stamp", stamp)
                 );
 
             Log.i(TAG, msg.toString());
@@ -205,6 +182,9 @@ public class PartyChannel implements MessageListener {
         Log.i(TAG, "pingAssistOut");
 
         try {
+            Date sinceDate = new Date(System.currentTimeMillis());
+            SimpleDateFormat stampFormat = new SimpleDateFormat(mService.mMapperChannel.STAMP_PATTERN);
+            String stamp = stampFormat.format(sinceDate);
 
             JSONObject msg = new JSONObject()
                     .put("func", "ping_assist")
@@ -212,6 +192,8 @@ public class PartyChannel implements MessageListener {
                                     .put("stream_id", mService.mStream.getString("stream_id"))
                                     .put("assist_latlng", latlng)
                                     .put("details", details)
+                                    .put("author", mService.mNick)
+                                    .put("stamp", stamp)
                     );
 
             Log.i(TAG, msg.toString());
@@ -227,6 +209,9 @@ public class PartyChannel implements MessageListener {
         Log.i(TAG, "pingDangerOut");
 
         try {
+            Date sinceDate = new Date(System.currentTimeMillis());
+            SimpleDateFormat stampFormat = new SimpleDateFormat(mService.mMapperChannel.STAMP_PATTERN);
+            String stamp = stampFormat.format(sinceDate);
 
             JSONObject msg = new JSONObject()
                     .put("func", "ping_danger")
@@ -234,6 +219,8 @@ public class PartyChannel implements MessageListener {
                                     .put("stream_id", mService.mStream.getString("stream_id"))
                                     .put("danger_latlng", latlng)
                                     .put("details", details)
+                                    .put("author", mService.mNick)
+                                    .put("stamp", stamp)
                     );
 
             Log.i(TAG, msg.toString());

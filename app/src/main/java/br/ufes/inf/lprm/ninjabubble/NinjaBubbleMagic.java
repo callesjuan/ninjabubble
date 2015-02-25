@@ -91,8 +91,9 @@ public class NinjaBubbleMagic extends Service {
 
     public JSONObject mSource;
     public JSONObject mStream;
-    public JSONArray mParty;
     public JSONArray mMatchedGroups;
+    public JSONArray mParty;
+    public JSONArray mPings;
 
     public JSONArray mLatlng;
     public String mHashtags;
@@ -291,7 +292,7 @@ public class NinjaBubbleMagic extends Service {
                 notificationIntent, 0);
 
         Notification notification = new NotificationCompat.Builder(this)
-                .setSmallIcon(R.drawable.ic_launcher)
+                .setSmallIcon(R.drawable.my_launcher)
                 .setContentTitle(getText(R.string.app_name))
                 .setContentText(getText(R.string.service_start))
                 .setContentIntent(pendingIntent)

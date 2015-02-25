@@ -239,6 +239,10 @@ public class HomeView extends ContentView {
 
                                 try {
                                     mOverlayView.mService.mPartyChannel.join(mOverlayView.mService.mStream.getString("group_jid"));
+
+                                    /*
+
+                                     */
                                 } catch (Exception e) {
                                     Log.e(TAG, "streamResume", e);
                                     Toast.makeText(getContext(), R.string.error_groupjoin, Toast.LENGTH_SHORT).show();

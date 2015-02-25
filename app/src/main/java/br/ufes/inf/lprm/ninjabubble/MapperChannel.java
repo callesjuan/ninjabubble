@@ -35,8 +35,8 @@ public class MapperChannel implements ChatMessageListener {
     public boolean mReplyError = false;
     public long mTimeout = 1000 * 30;
 
-    final String DATE_PATTERN = "yyyy-MM-dd'T'hh:mm:ss.SSS";
-    final String STAMP_PATTERN = "yyyyMMddhhmmss";
+    final String DATE_PATTERN = "yyyy-MM-dd'T'HH:mm:ss.SSS";
+    final String STAMP_PATTERN = "yyyyMMddHHmmss";
 
     public MapperChannel(NinjaBubbleMagic service) {
         mService = service;
@@ -155,6 +155,9 @@ public class MapperChannel implements ChatMessageListener {
             }
             else if (parsed.getString("func").equals("group_fetch_members_reply")) {
                 groupFetchMembersReply(args);
+            }
+            else if (parsed.getString("func").equals("group_fetch_pings_reply")) {
+                groupFetchPingsReply(args);
             }
         }
         catch (Exception e) {
@@ -336,6 +339,7 @@ public class MapperChannel implements ChatMessageListener {
     }
 
     public void streamResumeReply(JSONObject args) {
+        Log.i(TAG, "streamResumeReply:"+args.toString());
         if (!mWaitingReply) {
             return;
         }
@@ -687,6 +691,50 @@ public class MapperChannel implements ChatMessageListener {
         }
         catch (Exception e) {
             Log.e(TAG, "groupFetchMembersReply", e);
+            unlock(true);
+        }
+    }
+
+    /**
+     * groupFetchPings
+     */
+    public void groupFetchPings (long since) throws Exception {
+        Log.i(TAG, "groupFetchPings");
+
+        try {
+            Date sinceDate = new Date(System.currentTimeMillis() - since);
+            SimpleDateFormat stampFormat = new SimpleDateFormat(STAMP_PATTERN);
+            String stamp = stampFormat.format(sinceDate);
+
+            JSONObject msg = new JSONObject()
+                .put("func", "group_fetch_pings")
+                .put("args", new JSONObject()
+                    .put("group_jid", mService.mStream.getString("group_jid"))
+                    .put("since", stamp)
+                );
+
+            Log.i(TAG, msg.toString());
+            mChat.sendMessage(msg.toString());
+
+            lock();
+        } catch (Exception e) {
+            Log.e(TAG, "groupFetchPings", e);
+            throw e;
+        }
+    }
+
+    public void groupFetchPingsReply(JSONObject args) {
+        Log.i(TAG, "groupFetchPingsReply:"+args.toString());
+        if (!mWaitingReply) {
+            return;
+        }
+        try {
+            mService.mPings = args.getJSONArray("pings");
+            Log.i(TAG, mService.mPings.toString());
+            unlock();
+        }
+        catch (Exception e) {
+            Log.e(TAG, "groupFetchPings", e);
             unlock(true);
         }
     }
