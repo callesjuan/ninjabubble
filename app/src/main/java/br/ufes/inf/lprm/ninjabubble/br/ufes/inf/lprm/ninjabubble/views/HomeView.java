@@ -4,6 +4,7 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.text.InputType;
 import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
@@ -36,7 +37,7 @@ public class HomeView extends ContentView {
     public long mLastLookup = 0;
     public final long LOOKUP_INTERVAL = 1000 * 10;
     public Dialog mLookupDialog;
-    private double mLookupRadius = 5.0;
+    private double mLookupRadius = 0.015; // aprox 1.67km radius, where in 0.03 is aprox 3.34km and reta da penha has aprox 3km length
 
     public HomeView(Context context, final OverlayView overlayView) {
         super(context, overlayView);
@@ -76,6 +77,7 @@ public class HomeView extends ContentView {
                     builder.setMessage(R.string.alert_stream_init);
 
                     final EditText txtHashtags = new EditText(getContext());
+                    txtHashtags.setInputType(InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD|InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
                     builder.setView(txtHashtags);
 
                     builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
@@ -86,7 +88,7 @@ public class HomeView extends ContentView {
                                 return;
                             }
 
-                            mOverlayView.mService.mHashtags = txtHashtags.getText().toString();
+                            mOverlayView.mService.mHashtags = txtHashtags.getText().toString().replace(" ", "");
 
                             showLoading();
                             mOverlayView.mService.runConcurrentThread(new Runnable() {
@@ -542,6 +544,11 @@ public class HomeView extends ContentView {
                                         mOverlayView.mService.runOnUiThread(new Runnable() {
                                             @Override
                                             public void run() {
+                                                if (mOverlayView.vChat != null && mOverlayView.vChat.mAdapter != null) {
+                                                    mOverlayView.vChat.mAdapter.clear();
+                                                    mOverlayView.vChat.mAdapter.notifyDataSetChanged();
+                                                }
+
                                                 showLoaded();
                                             }
                                         });
@@ -599,6 +606,7 @@ public class HomeView extends ContentView {
         builder.setMessage(R.string.alert_stream_init);
 
         final EditText txtHashtags = new EditText(getContext());
+        txtHashtags.setInputType(InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD|InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
         builder.setView(txtHashtags);
 
         builder.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
@@ -609,7 +617,7 @@ public class HomeView extends ContentView {
                     return;
                 }
 
-                mOverlayView.mService.mHashtags = txtHashtags.getText().toString();
+                mOverlayView.mService.mHashtags = txtHashtags.getText().toString().replace(" ", "");
 
                 showLoading();
                 mOverlayView.mService.runConcurrentThread(new Runnable() {
@@ -701,6 +709,11 @@ public class HomeView extends ContentView {
                     mOverlayView.mService.runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
+                            if (mOverlayView.vChat != null && mOverlayView.vChat.mAdapter != null) {
+                                mOverlayView.vChat.mAdapter.clear();
+                                mOverlayView.vChat.mAdapter.notifyDataSetChanged();
+                            }
+
                             showLoaded();
                         }
                     });

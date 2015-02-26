@@ -1,6 +1,9 @@
 package br.ufes.inf.lprm.ninjabubble;
 
+import android.content.Context;
+import android.os.Vibrator;
 import android.util.Log;
+import android.view.View;
 
 import org.jivesoftware.smack.MessageListener;
 import org.jivesoftware.smack.SmackConfiguration;
@@ -72,7 +75,17 @@ public class PartyChannel implements MessageListener {
         DelayInformation delay = null;
         try {
             delay = (DelayInformation)message.getExtension("x", "jabber:x:delay");
+            if (delay != null) {
+                return;
+            }
         } catch (Exception e) {}
+        try {
+            delay = (DelayInformation)message.getExtension("delay", "urn:xmpp:delay");
+            if (delay != null) {
+                return;
+            }
+        } catch (Exception e) {}
+        Log.i(TAG, "msg:"+message.toString());
 
         try {
             JSONObject parsed = new JSONObject(message.getBody());
@@ -105,6 +118,13 @@ public class PartyChannel implements MessageListener {
                         mService.mOverlayView.vChat.mAdapter.add(message.getBody());
                         mService.mOverlayView.vChat.mAdapter.notifyDataSetChanged();
                         mService.mOverlayView.vChat.mListView.setSelection(mService.mOverlayView.vChat.mListView.getCount()-1);
+                        mService.mOverlayView.imChat.setImageBitmap(mService.mOverlayView.mBmpChatNew);
+
+                        if (mService.mOverlayView.mNinjaHead.getVisibility() == View.VISIBLE) {
+                            mService.mOverlayView.mNinjaHead.setImageResource(R.drawable.my_launcher_new);
+                            Vibrator v = (Vibrator) mService.getSystemService(Context.VIBRATOR_SERVICE);
+                            v.vibrate(500);
+                        }
                     } catch (Exception e) {
                         Log.e(TAG, "chatMessageIn", e);
                     }
@@ -128,16 +148,37 @@ public class PartyChannel implements MessageListener {
 
         if(mService.mOverlayView.vMinimap != null) {
             try {
-                final PingMarker ping = mService.mOverlayView.vMinimap.addPing(mService.mOverlayView.vMinimap.PING_TARGET, args.getJSONArray("target_latlng"), args.getString("details"), args.getString("stream_id"), args.getLong("stamp"));
-                mService.mOverlayView.vMinimap.mMapView.getOverlays().add(ping);
-                mService.runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        mService.mOverlayView.vMinimap.mMapView.invalidate();
-                        ping.showInfoWindow();
-                        mService.mOverlayView.imMinimap.setImageBitmap(mService.mOverlayView.mBmpMinimapNew);
-                    }
-                });
+                if (mService.mOverlayView.vMinimap.mHasLoaded) {
+                    final PingMarker ping = mService.mOverlayView.vMinimap.addPing(mService.mOverlayView.vMinimap.PING_TARGET, args.getJSONArray("target_latlng"), args.getString("details"), args.getString("stream_id"), args.getLong("stamp"));
+                    mService.mOverlayView.vMinimap.mMapView.getOverlays().add(ping);
+                    mService.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            mService.mOverlayView.vMinimap.mMapView.invalidate();
+                            ping.showInfoWindow();
+                            mService.mOverlayView.imMinimap.setImageBitmap(mService.mOverlayView.mBmpMinimapNew);
+                            if (mService.mOverlayView.mNinjaHead.getVisibility() == View.VISIBLE) {
+                                mService.mOverlayView.mNinjaHead.setImageResource(R.drawable.my_launcher_new);
+                                Vibrator v = (Vibrator) mService.getSystemService(Context.VIBRATOR_SERVICE);
+                                v.vibrate(500);
+                            }
+                        }
+                    });
+                } else {
+                    mService.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                mService.mOverlayView.imMinimap.setImageBitmap(mService.mOverlayView.mBmpMinimapNew);
+                                if (mService.mOverlayView.mNinjaHead.getVisibility() == View.VISIBLE) {
+                                    mService.mOverlayView.mNinjaHead.setImageResource(R.drawable.my_launcher_new);
+                                    Vibrator v = (Vibrator) mService.getSystemService(Context.VIBRATOR_SERVICE);
+                                    v.vibrate(500);
+                                }
+                            } catch (Exception e) {Log.e(TAG, "pingDangerIn/runOnUiThread", e);}
+                        }
+                    });
+                }
             } catch (Exception e) {}
         }
     }
@@ -174,16 +215,37 @@ public class PartyChannel implements MessageListener {
 
         if(mService.mOverlayView.vMinimap != null) {
             try {
-                final PingMarker ping = mService.mOverlayView.vMinimap.addPing(mService.mOverlayView.vMinimap.PING_ASSIST, args.getJSONArray("assist_latlng"), args.getString("details"), args.getString("stream_id"), args.getLong("stamp"));
-                mService.mOverlayView.vMinimap.mMapView.getOverlays().add(ping);
-                mService.runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        mService.mOverlayView.vMinimap.mMapView.invalidate();
-                        ping.showInfoWindow();
-                        mService.mOverlayView.imMinimap.setImageBitmap(mService.mOverlayView.mBmpMinimapNew);
-                    }
-                });
+                if (mService.mOverlayView.vMinimap.mHasLoaded) {
+                    final PingMarker ping = mService.mOverlayView.vMinimap.addPing(mService.mOverlayView.vMinimap.PING_ASSIST, args.getJSONArray("assist_latlng"), args.getString("details"), args.getString("stream_id"), args.getLong("stamp"));
+                    mService.mOverlayView.vMinimap.mMapView.getOverlays().add(ping);
+                    mService.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            mService.mOverlayView.vMinimap.mMapView.invalidate();
+                            ping.showInfoWindow();
+                            mService.mOverlayView.imMinimap.setImageBitmap(mService.mOverlayView.mBmpMinimapNew);
+                            if (mService.mOverlayView.mNinjaHead.getVisibility() == View.VISIBLE) {
+                                mService.mOverlayView.mNinjaHead.setImageResource(R.drawable.my_launcher_new);
+                                Vibrator v = (Vibrator) mService.getSystemService(Context.VIBRATOR_SERVICE);
+                                v.vibrate(500);
+                            }
+                        }
+                    });
+                } else {
+                    mService.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                mService.mOverlayView.imMinimap.setImageBitmap(mService.mOverlayView.mBmpMinimapNew);
+                                if (mService.mOverlayView.mNinjaHead.getVisibility() == View.VISIBLE) {
+                                    mService.mOverlayView.mNinjaHead.setImageResource(R.drawable.my_launcher_new);
+                                    Vibrator v = (Vibrator) mService.getSystemService(Context.VIBRATOR_SERVICE);
+                                    v.vibrate(500);
+                                }
+                            } catch (Exception e) {Log.e(TAG, "pingDangerIn/runOnUiThread", e);}
+                        }
+                    });
+                }
             } catch (Exception e) {}
         }
     }
@@ -220,18 +282,40 @@ public class PartyChannel implements MessageListener {
 
         if(mService.mOverlayView.vMinimap != null) {
             try {
-                final PingMarker ping = mService.mOverlayView.vMinimap.addPing(mService.mOverlayView.vMinimap.PING_DANGER, args.getJSONArray("danger_latlng"), args.getString("details"), args.getString("stream_id"), args.getLong("stamp"));
-                mService.mOverlayView.vMinimap.mMapView.getOverlays().add(ping);
-                mService.runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        mService.mOverlayView.vMinimap.mMapView.invalidate();
-                        ping.showInfoWindow();
-                        mService.mOverlayView.imMinimap.setImageBitmap(mService.mOverlayView.mBmpMinimapNew);
-                    }
-                });
-
-            } catch (Exception e) {}
+                if (mService.mOverlayView.vMinimap.mHasLoaded) {
+                    final PingMarker ping = mService.mOverlayView.vMinimap.addPing(mService.mOverlayView.vMinimap.PING_DANGER, args.getJSONArray("danger_latlng"), args.getString("details"), args.getString("stream_id"), args.getLong("stamp"));
+                    mService.mOverlayView.vMinimap.mMapView.getOverlays().add(ping);
+                    mService.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                mService.mOverlayView.vMinimap.mMapView.invalidate();
+                                ping.showInfoWindow();
+                                mService.mOverlayView.imMinimap.setImageBitmap(mService.mOverlayView.mBmpMinimapNew);
+                                if (mService.mOverlayView.mNinjaHead.getVisibility() == View.VISIBLE) {
+                                    mService.mOverlayView.mNinjaHead.setImageResource(R.drawable.my_launcher_new);
+                                    Vibrator v = (Vibrator) mService.getSystemService(Context.VIBRATOR_SERVICE);
+                                    v.vibrate(500);
+                                }
+                            } catch (Exception e) {Log.e(TAG, "pingDangerIn/runOnUiThread", e);}
+                        }
+                    });
+                } else {
+                    mService.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                mService.mOverlayView.imMinimap.setImageBitmap(mService.mOverlayView.mBmpMinimapNew);
+                                if (mService.mOverlayView.mNinjaHead.getVisibility() == View.VISIBLE) {
+                                    mService.mOverlayView.mNinjaHead.setImageResource(R.drawable.my_launcher_new);
+                                    Vibrator v = (Vibrator) mService.getSystemService(Context.VIBRATOR_SERVICE);
+                                    v.vibrate(500);
+                                }
+                            } catch (Exception e) {Log.e(TAG, "pingDangerIn/runOnUiThread", e);}
+                        }
+                    });
+                }
+            } catch (Exception e) {Log.e(TAG, "pingDangerIn", e);}
         }
     }
 

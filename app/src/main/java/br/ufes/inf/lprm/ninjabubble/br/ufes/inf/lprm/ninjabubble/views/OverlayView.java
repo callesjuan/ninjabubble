@@ -105,6 +105,7 @@ public class OverlayView {
                             return true;
                         case MotionEvent.ACTION_UP:
                             if (System.currentTimeMillis() - lastTouchDown < TOUCH_TIME_THRESHOLD) {
+                                mNinjaHead.setImageResource(R.drawable.my_launcher);
                                 mNinjaHead.setVisibility(View.GONE);
                                 mParentLayout.setVisibility(View.VISIBLE);
                             }

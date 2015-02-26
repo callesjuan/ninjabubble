@@ -1,6 +1,7 @@
 package br.ufes.inf.lprm.ninjabubble.br.ufes.inf.lprm.ninjabubble.views;
 
 import android.content.Context;
+import android.text.InputType;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
@@ -56,18 +57,23 @@ public class ChatView extends ContentView {
                 mAdapter.addAll(history);
 
                 final int contentWidth = (int) (mOverlayView.mWidth);
-                final int contentHeight = (int) (mOverlayView.mHeight * 0.8);
+                final int contentHeightList = (int) (mOverlayView.mHeight * 0.7);
+                final int contentHeightInput = (int) (mOverlayView.mHeight * 0.3);
 
                 mListView = new ListView(getContext());
                 mListView.setAdapter(mAdapter);
-                mListView.setLayoutParams(new LinearLayout.LayoutParams(contentWidth, contentHeight));
+                mListView.setLayoutParams(new LinearLayout.LayoutParams(contentWidth, contentHeightList));
 
                 mInputLayout = new LinearLayout(getContext());
                 mInputLayout.setGravity(Gravity.CENTER);
-                mInputLayout.setLayoutParams(new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+                mInputLayout.setLayoutParams(new LayoutParams(contentWidth, contentHeightInput));
 
                 mInput = new EditText(getContext());
-                mInput.setWidth((int)(contentWidth*0.8));
+                mInput.setWidth((int) (contentWidth * 0.8));
+                mInput.setInputType(InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+                mInput.setMinLines(3);
+                mInput.setGravity(Gravity.TOP | Gravity.LEFT);
+
                 mInputLayout.addView(mInput);
 
                 mSend = new Button(getContext());

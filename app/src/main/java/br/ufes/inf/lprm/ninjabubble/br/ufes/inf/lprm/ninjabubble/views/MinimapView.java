@@ -348,9 +348,14 @@ public class MinimapView extends ContentView {
             return;
         }
         for (int i = 0; i < members.length(); i++) {
-            Marker marker = new Marker(mMapView);
             try {
                 JSONObject member = members.getJSONObject(i);
+                if (!member.getString("status").equals("streaming")) {
+                    continue;
+                }
+
+                Marker marker = new Marker(mMapView);
+
                 marker.setTitle(member.getString("jid"));
                 marker.setSnippet(member.getString("hashtags"));
 
