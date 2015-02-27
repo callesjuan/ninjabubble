@@ -320,7 +320,9 @@ public class MinimapView extends ContentView {
             if (mSelf == null) {
                 mSelf = new Marker(mMapView);
                 mSelf.setTitle("Self");
-                mSelf.setSnippet(mOverlayView.mService.mHashtags);
+                try {
+                    mSelf.setSnippet(mOverlayView.mService.mStream.getString("hashtags"));
+                } catch (Exception e) {}
             }
             mSelf.setPosition(myLatlng);
             mSelf.setIcon(drawable);

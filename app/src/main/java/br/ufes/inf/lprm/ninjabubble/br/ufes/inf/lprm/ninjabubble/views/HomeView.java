@@ -547,6 +547,8 @@ public class HomeView extends ContentView {
                                                 if (mOverlayView.vChat != null && mOverlayView.vChat.mAdapter != null) {
                                                     mOverlayView.vChat.mAdapter.clear();
                                                     mOverlayView.vChat.mAdapter.notifyDataSetChanged();
+                                                    mOverlayView.vChat.mListView.setAdapter(mOverlayView.vChat.mAdapter);
+                                                    mOverlayView.vChat.mListView.invalidate();
                                                 }
 
                                                 showLoaded();
@@ -712,6 +714,8 @@ public class HomeView extends ContentView {
                             if (mOverlayView.vChat != null && mOverlayView.vChat.mAdapter != null) {
                                 mOverlayView.vChat.mAdapter.clear();
                                 mOverlayView.vChat.mAdapter.notifyDataSetChanged();
+                                mOverlayView.vChat.mListView.setAdapter(mOverlayView.vChat.mAdapter);
+                                mOverlayView.vChat.mListView.invalidate();
                             }
 
                             showLoaded();

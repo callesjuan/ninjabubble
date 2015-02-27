@@ -43,7 +43,9 @@ public class ChatView extends ContentView {
 
         if (super.mHasLoaded) {
             super.showLoaded();
-            mListView.setSelection(mListView.getCount()-1);
+            if(mListView.getCount() > 0)
+                mListView.setSelection(mListView.getCount()-1);
+            Log.i(TAG, "AAAAA:" + mOverlayView.vChat.mAdapter.toString());
             return;
         } else {
             super.mHasLoaded = true;
@@ -70,7 +72,8 @@ public class ChatView extends ContentView {
 
                 mInput = new EditText(getContext());
                 mInput.setWidth((int) (contentWidth * 0.8));
-                mInput.setInputType(InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+                //mInput.setInputType(InputType.TYPE_TEXT_FLAG_MULTI_LINE);
+                mInput.setInputType(InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD|InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
                 mInput.setMinLines(3);
                 mInput.setGravity(Gravity.TOP | Gravity.LEFT);
 
@@ -99,7 +102,8 @@ public class ChatView extends ContentView {
                         mContentLayout.addView(mInputLayout);
                         ChatView.super.showLoaded();
 
-                        mListView.setSelection(mListView.getCount()-1);
+                        if(mListView.getCount() > 0)
+                            mListView.setSelection(mListView.getCount()-1);
                     }
                 });
 
