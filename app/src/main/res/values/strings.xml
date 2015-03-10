@@ -37,7 +37,7 @@
     <string name="error_streamresume">Could not resume stream</string>
     <string name="error_streamclose">Could not close stream</string>
     <string name="error_groupjoin">Could not join group, messaging won\'t be available</string>
-    <string name="error_groupleave">Could not leave group</string>
+    <string name="error_groupleave">Could not join new group</string>
     <string name="error_groupmatch">Error while finding groups</string>
     <string name="error_groupmatch_empty">No found groups</string>
     <string name="error_groupfetchmembers">Could not fetch party members</string>

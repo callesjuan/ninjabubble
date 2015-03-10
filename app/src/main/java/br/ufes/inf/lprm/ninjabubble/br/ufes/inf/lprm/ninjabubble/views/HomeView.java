@@ -103,12 +103,7 @@ public class HomeView extends ContentView {
 
                                         mOverlayView.mService.mMapperChannel.streamInit(mOverlayView.mService.mMedia, null);
 
-                                        try {
-                                            mOverlayView.mService.mPartyChannel.join(mOverlayView.mService.mStream.getString("group_jid"));
-                                        } catch (Exception e) {
-                                            Log.e(TAG, "streamInit", e);
-                                            Toast.makeText(getContext(), R.string.error_groupjoin, Toast.LENGTH_SHORT).show();
-                                        }
+                                        mOverlayView.mService.mPartyChannel.join(mOverlayView.mService.mStream.getString("group_jid"));
 
                                         mOverlayView.mService.deleteChatHistory();
 
@@ -138,6 +133,12 @@ public class HomeView extends ContentView {
                                         mOverlayView.mService.runOnUiThread(new Runnable() {
                                             @Override
                                             public void run() {
+                                                if (mOverlayView.mService.mStream != null) {
+                                                    bStreamInit.setVisibility(GONE);
+                                                    bStreamResume.setVisibility(VISIBLE);
+                                                    bStreamClose.setVisibility(VISIBLE);
+                                                }
+
                                                 showLoaded();
                                             }
                                         });
@@ -241,16 +242,7 @@ public class HomeView extends ContentView {
 
                                 mOverlayView.mService.mMapperChannel.streamResume();
 
-                                try {
-                                    mOverlayView.mService.mPartyChannel.join(mOverlayView.mService.mStream.getString("group_jid"));
-
-                                    /*
-
-                                     */
-                                } catch (Exception e) {
-                                    Log.e(TAG, "streamResume", e);
-                                    Toast.makeText(getContext(), R.string.error_groupjoin, Toast.LENGTH_SHORT).show();
-                                }
+                                mOverlayView.mService.mPartyChannel.join(mOverlayView.mService.mStream.getString("group_jid"));
 
                                 mOverlayView.mService.runOnUiThread(new Runnable() {
                                     @Override
@@ -532,12 +524,7 @@ public class HomeView extends ContentView {
                                         mOverlayView.mService.mMapperChannel.groupLeave();
                                         Toast.makeText(getContext(), R.string.success_groupleave, Toast.LENGTH_SHORT).show();
 
-                                        try {
-                                            mOverlayView.mService.mPartyChannel.join(mOverlayView.mService.mStream.getString("group_jid"));
-                                        } catch (Exception e) {
-                                            Log.e(TAG, "groupLeave", e);
-                                            Toast.makeText(getContext(), R.string.error_groupjoin, Toast.LENGTH_SHORT).show();
-                                        }
+                                        mOverlayView.mService.mPartyChannel.join(mOverlayView.mService.mStream.getString("group_jid"));
 
                                         mOverlayView.mService.deleteChatHistory();
 
@@ -557,9 +544,24 @@ public class HomeView extends ContentView {
                                     } catch (Exception e) {
                                         Log.e(TAG, "groupLeave", e);
                                         Toast.makeText(getContext(), R.string.error_groupleave, Toast.LENGTH_SHORT).show();
+                                        mOverlayView.mService.mMapperChannel.disconnect();
+
+                                        mOverlayView.mService.stopLocationListener();
+                                        mOverlayView.mService.stopOrientationListener();
+
                                         mOverlayView.mService.runOnUiThread(new Runnable() {
                                             @Override
                                             public void run() {
+                                                bStreamPause.setVisibility(GONE);
+                                                bStreamResume.setVisibility(VISIBLE);
+
+                                                bGroupMatch.setVisibility(GONE);
+                                                bGroupLeave.setVisibility(GONE);
+
+                                                mOverlayView.imHome.setImageBitmap(mOverlayView.mBmpOff);
+
+                                                mOverlayView.disableMenu();
+
                                                 showLoaded();
                                             }
                                         });
@@ -634,12 +636,7 @@ public class HomeView extends ContentView {
 
                             mOverlayView.mService.mMapperChannel.streamInit(mOverlayView.mService.mMedia, groupJid);
 
-                            try {
-                                mOverlayView.mService.mPartyChannel.join(mOverlayView.mService.mStream.getString("group_jid"));
-                            } catch (Exception e) {
-                                Log.e(TAG, "streamInit", e);
-                                Toast.makeText(getContext(), R.string.error_groupjoin, Toast.LENGTH_SHORT).show();
-                            }
+                            mOverlayView.mService.mPartyChannel.join(mOverlayView.mService.mStream.getString("group_jid"));
 
                             mOverlayView.mService.deleteChatHistory();
 
@@ -699,12 +696,7 @@ public class HomeView extends ContentView {
                     mOverlayView.mService.mMapperChannel.groupJoin(groupJid);
                     Toast.makeText(getContext(), R.string.success_groupjoin, Toast.LENGTH_SHORT).show();
 
-                    try {
-                        mOverlayView.mService.mPartyChannel.join(mOverlayView.mService.mStream.getString("group_jid"));
-                    } catch (Exception e) {
-                        Log.e(TAG, "groupLeave", e);
-                        Toast.makeText(getContext(), R.string.error_groupjoin, Toast.LENGTH_SHORT).show();
-                    }
+                    mOverlayView.mService.mPartyChannel.join(mOverlayView.mService.mStream.getString("group_jid"));
 
                     mOverlayView.mService.deleteChatHistory();
 
@@ -724,9 +716,23 @@ public class HomeView extends ContentView {
                 } catch (Exception e) {
                     Log.e(TAG, "groupLeave", e);
                     Toast.makeText(getContext(), R.string.error_groupleave, Toast.LENGTH_SHORT).show();
+                    mOverlayView.mService.mMapperChannel.disconnect();
+
+                    mOverlayView.mService.stopLocationListener();
+                    mOverlayView.mService.stopOrientationListener();
+
                     mOverlayView.mService.runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
+                            bStreamPause.setVisibility(GONE);
+                            bStreamResume.setVisibility(VISIBLE);
+
+                            bGroupMatch.setVisibility(GONE);
+                            bGroupLeave.setVisibility(GONE);
+
+                            mOverlayView.imHome.setImageBitmap(mOverlayView.mBmpOff);
+
+                            mOverlayView.disableMenu();
                             showLoaded();
                         }
                     });

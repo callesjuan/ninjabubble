@@ -176,11 +176,16 @@ public class OverlayView {
             imHome.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
+                    if (mCurrentView.equals(V_MINIMAP)) {
+                        vMinimap.mTimer.cancel();
+                    }
+
                     mCurrentView = V_HOME;
                     vHome.show();
                 }
             });
             mMenuLayout.addView(imHome);
+            mCurrentView = V_HOME;
 
             bmap = BitmapFactory.decodeResource(mService.getResources(), R.drawable.map_marker_round);
             mBmpMinimap = Bitmap.createScaledBitmap(bmap, imSize, imSize, true);
@@ -215,6 +220,10 @@ public class OverlayView {
             imChat.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
+                    if (mCurrentView.equals(V_MINIMAP)) {
+                        vMinimap.mTimer.cancel();
+                    }
+
                     if (mCurrentView == null || !mCurrentView.equals(V_CHAT)) {
                         mCurrentView = V_CHAT;
                         vChat.show();
@@ -235,6 +244,10 @@ public class OverlayView {
             imHide.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
+                    if (mCurrentView.equals(V_MINIMAP)) {
+                        vMinimap.mTimer.cancel();
+                    }
+
                     mCurrentView = V_HOME;
                     vHome.show();
                     mParentLayout.setVisibility(View.GONE);

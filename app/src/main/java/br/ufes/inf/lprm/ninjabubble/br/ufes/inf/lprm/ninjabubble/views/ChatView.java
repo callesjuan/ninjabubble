@@ -1,6 +1,7 @@
 package br.ufes.inf.lprm.ninjabubble.br.ufes.inf.lprm.ninjabubble.views;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.text.InputType;
 import android.util.Log;
 import android.view.Gravity;
@@ -76,6 +77,8 @@ public class ChatView extends ContentView {
                 mInput.setInputType(InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD|InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);
                 mInput.setMinLines(3);
                 mInput.setGravity(Gravity.TOP | Gravity.LEFT);
+                mInput.setBackgroundColor(Color.WHITE);
+                mInput.setTextColor(Color.BLACK);
 
                 mInputLayout.addView(mInput);
 

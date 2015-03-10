@@ -358,6 +358,7 @@ public class NinjaBubbleMagic extends Service {
                 mLatlng = latlng;
                 Log.i(TAG, "location set on lat:" + location.getLatitude() + " and lng:" + location.getLongitude());
             }
+            Log.i(TAG, "lcation set, or not?");
         } catch (Exception e) {}
     }
 

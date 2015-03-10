@@ -106,10 +106,10 @@ public class MainActivity extends Activity {
 
                             Log.i(TAG, "NinjaBubbleMagic has started");
 
-                            vJID.setFocusable(false);
+                            /*vJID.setFocusable(false);
                             vPWD.setFocusable(false);
                             vChannel.setFocusable(false);
-                            vMedia.setClickable(false);
+                            vMedia.setClickable(false);*/
                         } catch (Exception e) {
                             Log.e(TAG, "failed to authenticate at the XMPP server");
                         }
@@ -123,17 +123,17 @@ public class MainActivity extends Activity {
 
                     Log.i(TAG, "NinjaBubbleMagic has stopped");
 
-                    vJID.setFocusable(true);
+                    /*vJID.setFocusable(true);
                     vPWD.setFocusable(true);
                     vChannel.setFocusable(true);
-                    vMedia.setClickable(true);
+                    vMedia.setClickable(true);*/
                 }
             }
         });
 
-        vJID.setText("src1@juancalles.ddns.net");
+        vJID.setText("src1@git.lprm.inf.ufes.br");
         vPWD.setText("123");
-        vChannel.setText("callesjuan");
+        vChannel.setText("src1");
     }
 
     @Override
@@ -161,17 +161,17 @@ public class MainActivity extends Activity {
         if (mServiceRunning) {
             ((ToggleButton) findViewById(R.id.toggle_magic)).setChecked(true);
 
-            ((EditText) findViewById(R.id.txt_jid)).setFocusable(false);
+            /*((EditText) findViewById(R.id.txt_jid)).setFocusable(false);
             ((EditText) findViewById(R.id.txt_pwd)).setFocusable(false);
             ((EditText) findViewById(R.id.txt_channel)).setFocusable(false);
-            ((Spinner) findViewById(R.id.spin_media)).setClickable(false);
+            ((Spinner) findViewById(R.id.spin_media)).setClickable(false);*/
         } else {
             ((ToggleButton) findViewById(R.id.toggle_magic)).setChecked(false);
 
-            ((EditText) findViewById(R.id.txt_jid)).setFocusable(true);
+            /*((EditText) findViewById(R.id.txt_jid)).setFocusable(true);
             ((EditText) findViewById(R.id.txt_pwd)).setFocusable(true);
             ((EditText) findViewById(R.id.txt_channel)).setFocusable(true);
-            ((Spinner) findViewById(R.id.spin_media)).setClickable(true);
+            ((Spinner) findViewById(R.id.spin_media)).setClickable(true);*/
         }
 
         if (mDataUpdateReceiver == null) {
@@ -221,10 +221,10 @@ public class MainActivity extends Activity {
 
                 ((ToggleButton) findViewById(R.id.toggle_magic)).setChecked(false);
 
-                ((EditText) findViewById(R.id.txt_jid)).setFocusable(true);
+                /*((EditText) findViewById(R.id.txt_jid)).setFocusable(true);
                 ((EditText) findViewById(R.id.txt_pwd)).setFocusable(true);
                 ((EditText) findViewById(R.id.txt_channel)).setFocusable(true);
-                ((Spinner) findViewById(R.id.spin_media)).setClickable(true);
+                ((Spinner) findViewById(R.id.spin_media)).setClickable(true);*/
 
                 mServiceRunning = false;
             }

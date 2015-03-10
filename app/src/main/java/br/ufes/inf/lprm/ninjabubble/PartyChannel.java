@@ -122,9 +122,10 @@ public class PartyChannel implements MessageListener {
 
                         if (mService.mOverlayView.mNinjaHead.getVisibility() == View.VISIBLE) {
                             mService.mOverlayView.mNinjaHead.setImageResource(R.drawable.my_launcher_new);
-                            Vibrator v = (Vibrator) mService.getSystemService(Context.VIBRATOR_SERVICE);
-                            v.vibrate(500);
                         }
+                        Vibrator v = (Vibrator) mService.getSystemService(Context.VIBRATOR_SERVICE);
+                        v.vibrate(500);
+
                     } catch (Exception e) {
                         Log.e(TAG, "chatMessageIn", e);
                     }
@@ -159,9 +160,9 @@ public class PartyChannel implements MessageListener {
                             mService.mOverlayView.imMinimap.setImageBitmap(mService.mOverlayView.mBmpMinimapNew);
                             if (mService.mOverlayView.mNinjaHead.getVisibility() == View.VISIBLE) {
                                 mService.mOverlayView.mNinjaHead.setImageResource(R.drawable.my_launcher_new);
-                                Vibrator v = (Vibrator) mService.getSystemService(Context.VIBRATOR_SERVICE);
-                                v.vibrate(500);
                             }
+                            Vibrator v = (Vibrator) mService.getSystemService(Context.VIBRATOR_SERVICE);
+                            v.vibrate(500);
                         }
                     });
                 } else {
@@ -172,9 +173,9 @@ public class PartyChannel implements MessageListener {
                                 mService.mOverlayView.imMinimap.setImageBitmap(mService.mOverlayView.mBmpMinimapNew);
                                 if (mService.mOverlayView.mNinjaHead.getVisibility() == View.VISIBLE) {
                                     mService.mOverlayView.mNinjaHead.setImageResource(R.drawable.my_launcher_new);
-                                    Vibrator v = (Vibrator) mService.getSystemService(Context.VIBRATOR_SERVICE);
-                                    v.vibrate(500);
                                 }
+                                Vibrator v = (Vibrator) mService.getSystemService(Context.VIBRATOR_SERVICE);
+                                v.vibrate(500);
                             } catch (Exception e) {Log.e(TAG, "pingDangerIn/runOnUiThread", e);}
                         }
                     });
@@ -226,9 +227,9 @@ public class PartyChannel implements MessageListener {
                             mService.mOverlayView.imMinimap.setImageBitmap(mService.mOverlayView.mBmpMinimapNew);
                             if (mService.mOverlayView.mNinjaHead.getVisibility() == View.VISIBLE) {
                                 mService.mOverlayView.mNinjaHead.setImageResource(R.drawable.my_launcher_new);
-                                Vibrator v = (Vibrator) mService.getSystemService(Context.VIBRATOR_SERVICE);
-                                v.vibrate(500);
                             }
+                            Vibrator v = (Vibrator) mService.getSystemService(Context.VIBRATOR_SERVICE);
+                            v.vibrate(500);
                         }
                     });
                 } else {
@@ -239,9 +240,9 @@ public class PartyChannel implements MessageListener {
                                 mService.mOverlayView.imMinimap.setImageBitmap(mService.mOverlayView.mBmpMinimapNew);
                                 if (mService.mOverlayView.mNinjaHead.getVisibility() == View.VISIBLE) {
                                     mService.mOverlayView.mNinjaHead.setImageResource(R.drawable.my_launcher_new);
-                                    Vibrator v = (Vibrator) mService.getSystemService(Context.VIBRATOR_SERVICE);
-                                    v.vibrate(500);
                                 }
+                                Vibrator v = (Vibrator) mService.getSystemService(Context.VIBRATOR_SERVICE);
+                                v.vibrate(500);
                             } catch (Exception e) {Log.e(TAG, "pingDangerIn/runOnUiThread", e);}
                         }
                     });
@@ -294,9 +295,9 @@ public class PartyChannel implements MessageListener {
                                 mService.mOverlayView.imMinimap.setImageBitmap(mService.mOverlayView.mBmpMinimapNew);
                                 if (mService.mOverlayView.mNinjaHead.getVisibility() == View.VISIBLE) {
                                     mService.mOverlayView.mNinjaHead.setImageResource(R.drawable.my_launcher_new);
-                                    Vibrator v = (Vibrator) mService.getSystemService(Context.VIBRATOR_SERVICE);
-                                    v.vibrate(500);
                                 }
+                                Vibrator v = (Vibrator) mService.getSystemService(Context.VIBRATOR_SERVICE);
+                                v.vibrate(500);
                             } catch (Exception e) {Log.e(TAG, "pingDangerIn/runOnUiThread", e);}
                         }
                     });
@@ -308,9 +309,9 @@ public class PartyChannel implements MessageListener {
                                 mService.mOverlayView.imMinimap.setImageBitmap(mService.mOverlayView.mBmpMinimapNew);
                                 if (mService.mOverlayView.mNinjaHead.getVisibility() == View.VISIBLE) {
                                     mService.mOverlayView.mNinjaHead.setImageResource(R.drawable.my_launcher_new);
-                                    Vibrator v = (Vibrator) mService.getSystemService(Context.VIBRATOR_SERVICE);
-                                    v.vibrate(500);
                                 }
+                                Vibrator v = (Vibrator) mService.getSystemService(Context.VIBRATOR_SERVICE);
+                                v.vibrate(500);
                             } catch (Exception e) {Log.e(TAG, "pingDangerIn/runOnUiThread", e);}
                         }
                     });

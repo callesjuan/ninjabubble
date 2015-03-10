@@ -37,6 +37,8 @@ import org.osmdroid.views.overlay.OverlayItem;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import br.ufes.inf.lprm.ninjabubble.R;
 
@@ -63,13 +65,14 @@ public class MinimapView extends ContentView {
     public MapEventsOverlay mMapEventsOverlay;
     public MyMapEventsReceiver mMapEventsReceiver;
 
+    public Timer mTimer;
+    public final long TIMER_RATE = 1000 * 10;
+
     public String mPing;
 
     public int mDefaultTextColor;
     public Button mLastPingButton;
 
-    public final long GROUP_FETCH_MEMBERS_MIN = 1000 * 30;
-    public final long GROUP_FETCH_PINGS_MIN = 1000 * 10;
     public long mLastGroupFetchMembers = 0;
     public long mLastGroupFetchPings = 0;
 
@@ -125,26 +128,7 @@ public class MinimapView extends ContentView {
                     mOverlayView.mService.runConcurrentThread(new Runnable() {
                         @Override
                         public void run() {
-                            // final ArrayList<PingMarker> removable = dismissPings();
-                            // mMapView.getOverlays().removeAll(removable);
-
-                            long millis = System.currentTimeMillis();
-
-                            if (millis - mLastGroupFetchMembers > GROUP_FETCH_MEMBERS_MIN) {
-                                mMapView.getOverlays().removeAll(mParty);
-                                initParty();
-                                mMapView.getOverlays().addAll(mParty);
-                            }
-
-                            if (millis - mLastGroupFetchPings > GROUP_FETCH_PINGS_MIN) {
-                                mMapView.getOverlays().removeAll(mPings);
-                                initPings();
-                                mMapView.getOverlays().addAll(mPings);
-                            }
-
-                            mMapView.getOverlays().remove(mSelf);
                             prepareSelf();
-                            mMapView.getOverlays().add(mSelf);
 
                             mOverlayView.mService.runOnUiThread(new Runnable() {
                                 @Override
@@ -293,6 +277,37 @@ public class MinimapView extends ContentView {
                 });
             }
         });
+
+        mTimer = new Timer();
+        mTimer.scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                long millis = System.currentTimeMillis();
+
+
+                mMapView.getOverlays().removeAll(mParty);
+                initParty();
+                mMapView.getOverlays().addAll(mParty);
+
+
+                mMapView.getOverlays().removeAll(mPings);
+                initPings();
+                mMapView.getOverlays().addAll(mPings);
+
+
+                mMapView.getOverlays().remove(mSelf);
+                prepareSelf();
+                mMapView.getOverlays().add(mSelf);
+
+                mOverlayView.mService.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        mMapView.invalidate();
+                    }
+                });
+            }
+        }, TIMER_RATE, TIMER_RATE);
+
     }
 
     public void prepareSelf() {
@@ -332,10 +347,9 @@ public class MinimapView extends ContentView {
         }
     }
 
+
+
     public void initParty() {
-        if (System.currentTimeMillis() - mLastGroupFetchMembers < GROUP_FETCH_MEMBERS_MIN) {
-            return;
-        }
 
         try {
             mOverlayView.mService.mMapperChannel.groupFetchMembers();
@@ -375,9 +389,6 @@ public class MinimapView extends ContentView {
     }
 
     public void initPings() {
-        if (System.currentTimeMillis() - mLastGroupFetchPings < GROUP_FETCH_PINGS_MIN) {
-            return;
-        }
 
         try {
             mOverlayView.mService.mMapperChannel.groupFetchPings(PING_LIFETIME);
