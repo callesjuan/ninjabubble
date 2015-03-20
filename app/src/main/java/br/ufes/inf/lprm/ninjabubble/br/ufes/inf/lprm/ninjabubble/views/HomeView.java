@@ -19,9 +19,14 @@ import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import org.jivesoftware.smack.SmackException;
+import org.jivesoftware.smackx.filetransfer.FileTransferManager;
+import org.jivesoftware.smackx.filetransfer.OutgoingFileTransfer;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -821,16 +826,32 @@ public class HomeView extends ContentView {
             public void onPictureTaken(byte[] data, Camera camera) {
                 FileOutputStream outStream = null;
                 try {
+                    File outputDir = getContext().getCacheDir(); // context being the Activity pointer
+                    File outputFile = File.createTempFile("temp", "jpg", outputDir);
+
                     // write to local sand box file system
                     //outStream = CameraDemo.this.openFileOutput(String.format("%d.jpg", System.currentTimeMillis()), 0);
                     // Or write to s d card
-                    outStream = new FileOutputStream(String.format("/sdcard/%d.jpg", System.currentTimeMillis()));
+                    // outStream = new FileOutputStream(String.format("/sdcard/%d.jpg", System.currentTimeMillis()));
+                    outStream = new FileOutputStream(outputFile);
                     outStream.write(data);
                     outStream.close();
-                    Log.d(TAG, "onPictureTaken - wrote bytes: " + data.length);
+                    Log.d(TAG, "wrote bytes: " + data.length);
+
+                    // Create the file transfer manager
+                    FileTransferManager manager = FileTransferManager.getInstanceFor(mOverlayView.mService.mXmppConnection);
+                    // Create the outgoing file transfer
+                    OutgoingFileTransfer transfer = manager.createOutgoingFileTransfer(mOverlayView.mService.mMapperJID);
+                    // Send the file
+                    transfer.sendFile(outputFile, String.format("%s_%s", mOverlayView.mService.mStream.get("stream_id"), Long.toString(System.currentTimeMillis())));
+
                 } catch (FileNotFoundException e) {
                     e.printStackTrace();
                 } catch (IOException e) {
+                    e.printStackTrace();
+                } catch (SmackException e) {
+                    e.printStackTrace();
+                } catch (JSONException e) {
                     e.printStackTrace();
                 } finally {}
                 Log.d(TAG, "onPictureTaken - jpeg");
