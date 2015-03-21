@@ -55,10 +55,6 @@ public class HomeView extends ContentView {
     public Dialog mLookupDialog;
     private double mLookupRadius = 0.015; // aprox 1.67km radius, where in 0.03 is aprox 3.34km and reta da penha has aprox 3km length
 
-    public Timer mTimer;
-    public final long TIMER_RATE = 1000 * 10;
-    public Camera mCamera;
-
     public HomeView(Context context, final OverlayView overlayView) {
         super(context, overlayView);
 
@@ -759,103 +755,5 @@ public class HomeView extends ContentView {
                 }
             }
         });
-    }
-
-    public void startTimer() {
-        if ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1)
-                && ((Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP))) {
-            // your code here - is between15-21
-
-            mCamera = Camera.open();
-            try {
-                Camera.Parameters parameters = mCamera.getParameters();
-
-                List<Camera.Size> sizes = parameters.getSupportedPictureSizes();
-                Camera.Size lowestSize = null;
-                for (Camera.Size size : sizes) {
-                    if (lowestSize == null || (size.width <= lowestSize.width && size.height <= lowestSize.height)) {
-                        lowestSize = size;
-                    }
-                }
-
-                parameters.setPictureSize(lowestSize.width, lowestSize.height);
-
-                mCamera.setPreviewDisplay(null);
-                mCamera.startPreview();
-
-                mTimer = new Timer();
-                mTimer.scheduleAtFixedRate(new MyTimerTask(), TIMER_RATE, TIMER_RATE);
-
-            } catch (Exception e) {}
-
-        } else if(Build.VERSION.SDK_INT == Build.VERSION_CODES.LOLLIPOP) {
-            // your code here - is api 21
-        }
-    }
-
-    public void stopTimer() {
-        try {
-            mTimer.cancel();
-            mTimer = null;
-
-            mCamera.stopPreview();
-            mCamera.release();
-        } catch (Exception e) {}
-    }
-
-    public class MyTimerTask extends TimerTask {
-
-        @Override
-        public void run() {
-            mCamera.takePicture(shutterCallback, rawCallback, jpegCallback);
-        }
-
-        Camera.ShutterCallback shutterCallback = new Camera.ShutterCallback() {
-            public void onShutter() {
-                Log.d(TAG, "onShutter'd");
-            }
-        };
-
-        Camera.PictureCallback rawCallback = new Camera.PictureCallback() {
-            public void onPictureTaken(byte[] data, Camera camera) {
-                Log.d(TAG, "onPictureTaken - raw");
-            }
-        };
-
-        Camera.PictureCallback jpegCallback = new Camera.PictureCallback() {
-            public void onPictureTaken(byte[] data, Camera camera) {
-                FileOutputStream outStream = null;
-                try {
-                    File outputDir = getContext().getCacheDir(); // context being the Activity pointer
-                    File outputFile = File.createTempFile("temp", "jpg", outputDir);
-
-                    // write to local sand box file system
-                    //outStream = CameraDemo.this.openFileOutput(String.format("%d.jpg", System.currentTimeMillis()), 0);
-                    // Or write to s d card
-                    // outStream = new FileOutputStream(String.format("/sdcard/%d.jpg", System.currentTimeMillis()));
-                    outStream = new FileOutputStream(outputFile);
-                    outStream.write(data);
-                    outStream.close();
-                    Log.d(TAG, "wrote bytes: " + data.length);
-
-                    // Create the file transfer manager
-                    FileTransferManager manager = FileTransferManager.getInstanceFor(mOverlayView.mService.mXmppConnection);
-                    // Create the outgoing file transfer
-                    OutgoingFileTransfer transfer = manager.createOutgoingFileTransfer(mOverlayView.mService.mMapperJID);
-                    // Send the file
-                    transfer.sendFile(outputFile, String.format("%s_%s", mOverlayView.mService.mStream.get("stream_id"), Long.toString(System.currentTimeMillis())));
-
-                } catch (FileNotFoundException e) {
-                    e.printStackTrace();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                } catch (SmackException e) {
-                    e.printStackTrace();
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                } finally {}
-                Log.d(TAG, "onPictureTaken - jpeg");
-            }
-        };
     }
 }
