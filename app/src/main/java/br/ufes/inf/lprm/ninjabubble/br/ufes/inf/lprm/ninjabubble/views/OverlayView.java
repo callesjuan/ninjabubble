@@ -14,8 +14,6 @@ import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 
-import java.util.List;
-
 import br.ufes.inf.lprm.ninjabubble.NinjaBubbleMagic;
 import br.ufes.inf.lprm.ninjabubble.R;
 

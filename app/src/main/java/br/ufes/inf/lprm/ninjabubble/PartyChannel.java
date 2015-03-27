@@ -6,10 +6,8 @@ import android.util.Log;
 import android.view.View;
 
 import org.jivesoftware.smack.MessageListener;
-import org.jivesoftware.smack.SmackConfiguration;
 import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smackx.delay.packet.DelayInformation;
-import org.jivesoftware.smackx.muc.DiscussionHistory;
 import org.jivesoftware.smackx.muc.MultiUserChat;
 import org.jivesoftware.smackx.muc.MultiUserChatManager;
 import org.jivesoftware.smackx.xdata.Form;
@@ -19,8 +17,6 @@ import org.json.JSONObject;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Timer;
-import java.util.TimerTask;
 
 import br.ufes.inf.lprm.ninjabubble.br.ufes.inf.lprm.ninjabubble.views.PingMarker;
 

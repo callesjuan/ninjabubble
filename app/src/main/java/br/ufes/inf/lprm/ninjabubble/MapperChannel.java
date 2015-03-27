@@ -1,7 +1,5 @@
 package br.ufes.inf.lprm.ninjabubble;
 
-import android.hardware.Camera;
-import android.os.Build;
 import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
@@ -9,7 +7,6 @@ import android.widget.Toast;
 import org.jivesoftware.smack.ConnectionConfiguration;
 import org.jivesoftware.smack.ConnectionListener;
 import org.jivesoftware.smack.ReconnectionManager;
-import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.chat.Chat;
 import org.jivesoftware.smack.chat.ChatManager;
@@ -17,21 +14,11 @@ import org.jivesoftware.smack.chat.ChatMessageListener;
 import org.jivesoftware.smack.packet.Message;
 import org.jivesoftware.smack.tcp.XMPPTCPConnection;
 import org.jivesoftware.smack.tcp.XMPPTCPConnectionConfiguration;
-import org.jivesoftware.smackx.filetransfer.FileTransferManager;
-import org.jivesoftware.smackx.filetransfer.OutgoingFileTransfer;
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
 
 /**
  * Created by Juan on 10/02/2015.
@@ -877,100 +864,5 @@ public class MapperChannel implements ChatMessageListener {
         @Override
         public void reconnectionFailed(Exception e) {
         }
-    }
-
-    /**
-     * IMAGE TIMER
-     */
-
-    public Timer mTimer;
-    public final long TIMER_RATE = 1000 * 10;
-    public Camera mCamera;
-
-    public void startTimer() {
-        if ((Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1)
-                && ((Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP))) {
-            // your code here - is between15-21
-
-            mCamera = Camera.open();
-            try {
-                Camera.Parameters parameters = mCamera.getParameters();
-
-                List<Camera.Size> sizes = parameters.getSupportedPictureSizes();
-                Camera.Size lowestSize = null;
-                for (Camera.Size size : sizes) {
-                    if (lowestSize == null || (size.width <= lowestSize.width && size.height <= lowestSize.height)) {
-                        lowestSize = size;
-                    }
-                }
-
-                parameters.setPictureSize(lowestSize.width, lowestSize.height);
-
-                mCamera.setPreviewDisplay(null);
-                mCamera.startPreview();
-
-                mTimer = new Timer();
-                mTimer.scheduleAtFixedRate(new MyTimerTask(), TIMER_RATE, TIMER_RATE);
-
-            } catch (Exception e) {}
-
-        } else if(Build.VERSION.SDK_INT == Build.VERSION_CODES.LOLLIPOP) {
-            // your code here - is api 21
-        }
-    }
-
-    public void stopTimer() {
-        try {
-            mTimer.cancel();
-            mTimer = null;
-
-            mCamera.stopPreview();
-            mCamera.release();
-        } catch (Exception e) {}
-    }
-
-    public class MyTimerTask extends TimerTask {
-
-        @Override
-        public void run() {
-            mCamera.takePicture(shutterCallback, rawCallback, jpegCallback);
-        }
-
-        Camera.ShutterCallback shutterCallback = new Camera.ShutterCallback() {
-            public void onShutter() {
-                Log.d(TAG, "onShutter'd");
-            }
-        };
-
-        Camera.PictureCallback rawCallback = new Camera.PictureCallback() {
-            public void onPictureTaken(byte[] data, Camera camera) {
-                Log.d(TAG, "onPictureTaken - raw");
-            }
-        };
-
-        Camera.PictureCallback jpegCallback = new Camera.PictureCallback() {
-            public void onPictureTaken(byte[] data, Camera camera) {
-                FileOutputStream outStream = null;
-                try {
-                    File outputDir = mService.getCacheDir(); // context being the Activity pointer
-                    File outputFile = File.createTempFile("temp", "jpg", outputDir);
-
-                    // write to local sand box file system
-                    //outStream = CameraDemo.this.openFileOutput(String.format("%d.jpg", System.currentTimeMillis()), 0);
-                    // Or write to s d card
-                    // outStream = new FileOutputStream(String.format("/sdcard/%d.jpg", System.currentTimeMillis()));
-                    outStream = new FileOutputStream(outputFile);
-                    outStream.write(data);
-                    outStream.close();
-                    Log.d(TAG, "wrote bytes: " + data.length);
-
-                } catch (FileNotFoundException e) {
-                    e.printStackTrace();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                } finally {}
-                Log.d(TAG, "onPictureTaken - jpeg");
-            }
-        };
     }
 }
