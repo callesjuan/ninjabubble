@@ -53,5 +53,6 @@
         <item>Livestream</item>
         <item>Ustream</item>
     </string-array>
+    <string name="title_activity_transparent">TransparentActivity</string>
 
 </resources>

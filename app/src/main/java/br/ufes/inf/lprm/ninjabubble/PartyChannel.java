@@ -64,14 +64,18 @@ public class PartyChannel implements MessageListener {
 
                     String from = presence.getFrom().split("/")[1];
 
+                    if (from.equals("mapper") || from.equals("correlator")) {
+                        return;
+                    }
+
                     if(!presence.getType().equals(Presence.Type.unavailable)) {
                         mService.mPartyCount++;
-                        sendNotification(null, from + " joined your group.");
+                        mService.notifyMember(null, from + " is in");
                     }
                     else {
                         if (mService.mPartyCount > 0)
                             mService.mPartyCount--;
-                        sendNotification(null, from + " left your group.");
+                        mService.notifyMember(null, from + " is out");
                     }
 
                     mService.runOnUiThread(new Runnable() {
@@ -131,6 +135,9 @@ public class PartyChannel implements MessageListener {
             }
             else if (parsed.getString("func").equals("ping_danger")) {
                 pingDangerIn(args);
+            }
+            else if (parsed.getString("func").equals("notify_correlation")) {
+                mService.notifyCorrelation(args);
             }
         }
         catch (Exception e) {
@@ -375,24 +382,5 @@ public class PartyChannel implements MessageListener {
             Log.e(TAG, "pingDangerOut", e);
             throw e;
         }
-    }
-
-    public void sendNotification(String title, String text) {
-        NotificationCompat.Builder mBuilder =
-                new NotificationCompat.Builder(mService)
-                        .setSmallIcon(R.drawable.my_launcher)
-                        .setContentTitle(title)
-                        .setContentText(text);
-
-        mBuilder.setContentIntent(null);
-        mBuilder.setAutoCancel(true);
-        mBuilder.setTicker(text);
-        mBuilder.setVibrate(new long[] { 1000, 1000});
-        NotificationManager mNotificationManager =
-                (NotificationManager) mService.getSystemService(Context.NOTIFICATION_SERVICE);
-        // mId allows you to update the notification later on.
-        mNotificationManager.notify(mNID, mBuilder.build());
-
-        mNotificationManager.cancel(mNID);
     }
 }

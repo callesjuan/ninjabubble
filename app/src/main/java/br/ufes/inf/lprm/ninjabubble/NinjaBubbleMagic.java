@@ -1,10 +1,15 @@
 package br.ufes.inf.lprm.ninjabubble;
 
+import android.app.IntentService;
 import android.app.Notification;
+import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.app.TaskStackBuilder;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.PixelFormat;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -48,6 +53,8 @@ public class NinjaBubbleMagic extends Service {
     public final String CHAT_FILENAME = "chat.json";
 
     public int mNotificationId = 1985;
+    public int mNotificationIdMember = 1986;
+    public int mNotificationIdCorrelation = 1987;
 
     public HandlerThread mHandlerThread;
     public Looper mServiceLooper;
@@ -212,6 +219,7 @@ public class NinjaBubbleMagic extends Service {
                 mOverlayView.start();
 
                 mWindowManager.removeView(mLoading);
+
             } else if (msg.getData().getString("action").equals(ACTION_ONDESTROY)) {
                 try {
                     stopLocationListener();
@@ -636,5 +644,47 @@ public class NinjaBubbleMagic extends Service {
             boolean deleted = file.delete();
             Log.i(TAG, "deleteChatHistory:"+deleted);
         } catch (Exception e) {Log.e(TAG, "deleteChatHistory", e);}
+    }
+
+    public void notifyMember(String title, String text) {
+        NotificationCompat.Builder mBuilder =
+                new NotificationCompat.Builder(this)
+                        .setSmallIcon(R.drawable.my_launcher)
+                        .setContentTitle(title)
+                        .setContentText(text);
+
+        mBuilder.setContentIntent(null);
+        mBuilder.setAutoCancel(true);
+        mBuilder.setTicker(text);
+        // mBuilder.setVibrate(new long[] { 1000, 1000});
+        NotificationManager mNotificationManager =
+                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        // mId allows you to update the notification later on.
+        mNotificationManager.notify(mNotificationIdMember, mBuilder.build());
+
+        mNotificationManager.cancel(mNotificationIdMember);
+    }
+
+    public void notifyCorrelation(JSONObject args) {
+
+        try {
+
+            NotificationCompat.Builder mBuilder =
+                    new NotificationCompat.Builder(this)
+                            .setSmallIcon(R.drawable.my_launcher)
+                            .setContentTitle("Group suggestion")
+                            .setContentText(String.format("Join %s (%d)", args.getString("hashtags"), args.getInt("num_members")));
+
+            mBuilder.setContentIntent(null);
+            mBuilder.setAutoCancel(true);
+            mBuilder.setTicker("Group suggestion");
+            // mBuilder.setVibrate(new long[]{1000, 1000});
+            NotificationManager mNotificationManager =
+                    (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            // mId allows you to update the notification later on.
+            mNotificationManager.notify(mNotificationIdCorrelation, mBuilder.build());
+        } catch (Exception e) {
+            Log.e(TAG, "notifyCorrelation", e);
+        }
     }
 }
