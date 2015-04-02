@@ -264,6 +264,7 @@ public class MapperChannel implements ChatMessageListener {
 
             if (args.has("members")) {
                 mService.mParty = args.getJSONArray("members");
+                mService.mPartyCount = mService.mParty.length();
             }
 
             unlock();
@@ -348,6 +349,7 @@ public class MapperChannel implements ChatMessageListener {
 
             if (args.has("members")) {
                 mService.mParty = args.getJSONArray("members");
+                mService.mPartyCount = mService.mParty.length();
             }
 
             unlock();
@@ -605,6 +607,7 @@ public class MapperChannel implements ChatMessageListener {
         try {
             mService.mStream = args.getJSONObject("stream");
             mService.mParty = args.getJSONArray("members");
+            mService.mPartyCount = mService.mParty.length();
             unlock();
         }
         catch (Exception e) {
@@ -649,6 +652,7 @@ public class MapperChannel implements ChatMessageListener {
         try {
             mService.mStream = args.getJSONObject("stream");
             mService.mParty = null;
+            mService.mPartyCount = 0;
             unlock();
         }
         catch (Exception e) {
@@ -687,6 +691,7 @@ public class MapperChannel implements ChatMessageListener {
         }
         try {
             mService.mParty = args.getJSONArray("members");
+            mService.mPartyCount = mService.mParty.length();
             unlock();
         }
         catch (Exception e) {

@@ -99,6 +99,8 @@ public class NinjaBubbleMagic extends Service {
     public JSONArray mLatlng;
     public String mHashtags;
 
+    public int mPartyCount;
+
     private final static String ACTION_ONSTARTCOMMAND = "ACTION_ONSTARTCOMMAND";
     private final static String ACTION_ONDESTROY = "ACTION_ONDESTROY";
 

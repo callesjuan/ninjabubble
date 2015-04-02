@@ -4,8 +4,10 @@ import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.graphics.Color;
 import android.text.InputType;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.AdapterView;
@@ -13,6 +15,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import org.json.JSONArray;
@@ -34,10 +37,16 @@ public class HomeView extends ContentView {
     public Button bGroupMatch;  // works both for streamInit (new streams) and groupJoin (running streams)
     public Button bGroupLeave;
 
+    public TextView mInfoGroup;
+    public TextView mInfoGroupCount;
+
+    public String INFO_GROUP = "Group: %s";
+    public String INFO_GROUP_COUNT = "Count: %d";
+
     public long mLastLookup = 0;
     public final long LOOKUP_INTERVAL = 1000 * 10;
     public Dialog mLookupDialog;
-    private double mLookupRadius = 0.015; // aprox 1.67km radius, where in 0.03 is aprox 3.34km and reta da penha has aprox 3km length
+    private double mLookupRadius = 0.1; // aprox 1.67km radius, where in 0.03 is aprox 3.34km and reta da penha has aprox 3km length
 
     public HomeView(Context context, final OverlayView overlayView) {
         super(context, overlayView);
@@ -116,6 +125,14 @@ public class HomeView extends ContentView {
 
                                                 bGroupLeave.setVisibility(VISIBLE);
 
+                                                try {
+                                                    mInfoGroup.setText(String.format(INFO_GROUP, mOverlayView.mService.mStream.getString("hashtags")));
+                                                    mInfoGroup.setVisibility(VISIBLE);
+
+                                                    mInfoGroupCount.setText(String.format(INFO_GROUP_COUNT, mOverlayView.mService.mPartyCount));
+                                                    mInfoGroupCount.setVisibility(VISIBLE);
+                                                } catch (Exception e) {}
+
                                                 mOverlayView.imHome.setImageBitmap(mOverlayView.mBmpOn);
 
                                                 mOverlayView.enableMenu();
@@ -192,6 +209,9 @@ public class HomeView extends ContentView {
                                         bGroupMatch.setVisibility(GONE);
                                         bGroupLeave.setVisibility(GONE);
 
+                                        mInfoGroup.setVisibility(GONE);
+                                        mInfoGroupCount.setVisibility(GONE);
+
                                         mOverlayView.imHome.setImageBitmap(mOverlayView.mBmpOff);
 
                                         mOverlayView.disableMenu();
@@ -253,6 +273,14 @@ public class HomeView extends ContentView {
 
                                         bGroupMatch.setVisibility(VISIBLE);
                                         bGroupLeave.setVisibility(VISIBLE);
+
+                                        try {
+                                            mInfoGroup.setText(String.format(INFO_GROUP, mOverlayView.mService.mStream.getString("hashtags")));
+                                            mInfoGroup.setVisibility(VISIBLE);
+
+                                            mInfoGroupCount.setText(String.format(INFO_GROUP_COUNT, mOverlayView.mService.mPartyCount));
+                                            mInfoGroupCount.setVisibility(VISIBLE);
+                                        } catch (Exception e) {}
 
                                         mOverlayView.imHome.setImageBitmap(mOverlayView.mBmpOn);
 
@@ -322,6 +350,9 @@ public class HomeView extends ContentView {
 
                                                 bGroupMatch.setVisibility(VISIBLE);
                                                 bGroupLeave.setVisibility(GONE);
+
+                                                mInfoGroup.setVisibility(GONE);
+                                                mInfoGroupCount.setVisibility(GONE);
 
                                                 mOverlayView.imHome.setImageBitmap(mOverlayView.mBmpOff);
 
@@ -538,6 +569,11 @@ public class HomeView extends ContentView {
                                                     mOverlayView.vChat.mListView.invalidate();
                                                 }
 
+                                                try {
+                                                    mInfoGroup.setText(String.format(INFO_GROUP, mOverlayView.mService.mStream.getString("hashtags")));
+                                                    mInfoGroupCount.setText(String.format(INFO_GROUP_COUNT, mOverlayView.mService.mPartyCount));
+                                                } catch (Exception e) {}
+
                                                 showLoaded();
                                             }
                                         });
@@ -557,6 +593,9 @@ public class HomeView extends ContentView {
 
                                                 bGroupMatch.setVisibility(GONE);
                                                 bGroupLeave.setVisibility(GONE);
+
+                                                mInfoGroup.setVisibility(GONE);
+                                                mInfoGroupCount.setVisibility(GONE);
 
                                                 mOverlayView.imHome.setImageBitmap(mOverlayView.mBmpOff);
 
@@ -583,6 +622,18 @@ public class HomeView extends ContentView {
             mContentLayout.addView(bGroupLeave);
         }
 
+        mInfoGroup = new TextView(getContext());
+        mInfoGroup.setTextColor(Color.BLACK);
+        mInfoGroup.setGravity(Gravity.CENTER_HORIZONTAL);
+        mInfoGroup.setVisibility(GONE);
+        mContentLayout.addView(mInfoGroup);
+
+        mInfoGroupCount = new TextView(getContext());
+        mInfoGroupCount.setTextColor(Color.BLACK);
+        mInfoGroupCount.setGravity(Gravity.CENTER_HORIZONTAL);
+        mInfoGroupCount.setVisibility(GONE);
+        mContentLayout.addView(mInfoGroupCount);
+
         if (mOverlayView.mService.mStream != null) {
             bStreamInit.setVisibility(GONE);
             bStreamPause.setVisibility(GONE);
@@ -597,7 +648,7 @@ public class HomeView extends ContentView {
             bStreamResume.setVisibility(GONE);
             bStreamClose.setVisibility(GONE);
 
-            bGroupMatch.setVisibility(VISIBLE);
+            bGroupMatch.setVisibility(GONE);
             bGroupLeave.setVisibility(GONE);
         }
 
@@ -650,6 +701,14 @@ public class HomeView extends ContentView {
                                     bStreamClose.setVisibility(VISIBLE);
 
                                     bGroupLeave.setVisibility(VISIBLE);
+
+                                    try {
+                                        mInfoGroup.setText(String.format(INFO_GROUP, mOverlayView.mService.mStream.getString("hashtags")));
+                                        mInfoGroup.setVisibility(VISIBLE);
+
+                                        mInfoGroupCount.setText(String.format(INFO_GROUP_COUNT, mOverlayView.mService.mPartyCount));
+                                        mInfoGroupCount.setVisibility(VISIBLE);
+                                    } catch (Exception e) {}
 
                                     mOverlayView.imHome.setImageBitmap(mOverlayView.mBmpOn);
 
@@ -709,6 +768,11 @@ public class HomeView extends ContentView {
                                 mOverlayView.vChat.mListView.setAdapter(mOverlayView.vChat.mAdapter);
                                 mOverlayView.vChat.mListView.invalidate();
                             }
+
+                            try {
+                                mInfoGroup.setText(String.format(INFO_GROUP, mOverlayView.mService.mStream.getString("hashtags")));
+                                mInfoGroupCount.setText(String.format(INFO_GROUP_COUNT, mOverlayView.mService.mPartyCount));
+                            } catch (Exception e) {}
 
                             showLoaded();
                         }

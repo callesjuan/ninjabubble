@@ -1,12 +1,18 @@
 package br.ufes.inf.lprm.ninjabubble;
 
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Context;
+import android.content.Intent;
 import android.os.Vibrator;
+import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.view.View;
 
 import org.jivesoftware.smack.MessageListener;
+import org.jivesoftware.smack.PresenceListener;
 import org.jivesoftware.smack.packet.Message;
+import org.jivesoftware.smack.packet.Presence;
 import org.jivesoftware.smackx.delay.packet.DelayInformation;
 import org.jivesoftware.smackx.muc.MultiUserChat;
 import org.jivesoftware.smackx.muc.MultiUserChatManager;
@@ -30,6 +36,8 @@ public class PartyChannel implements MessageListener {
     public NinjaBubbleMagic mService;
     public MultiUserChat mChat;
 
+    public int mNID = 1988;
+
     public PartyChannel (NinjaBubbleMagic service) {
         mService = service;
     }
@@ -48,6 +56,32 @@ public class PartyChannel implements MessageListener {
             if (mChat.createOrJoin(mService.mStream.getString("jid"))) {
                 mChat.sendConfigurationForm(new Form(DataForm.Type.submit));
             }
+
+            mChat.addParticipantListener(new PresenceListener() {
+                @Override
+                public void processPresence(Presence presence) {
+                    Log.i(TAG, presence.toXML().toString());
+
+                    String from = presence.getFrom().split("/")[1];
+
+                    if(!presence.getType().equals(Presence.Type.unavailable)) {
+                        mService.mPartyCount++;
+                        sendNotification(null, from + " joined your group.");
+                    }
+                    else {
+                        if (mService.mPartyCount > 0)
+                            mService.mPartyCount--;
+                        sendNotification(null, from + " left your group.");
+                    }
+
+                    mService.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            mService.mOverlayView.vHome.mInfoGroupCount.setText(String.format(mService.mOverlayView.vHome.INFO_GROUP_COUNT, mService.mPartyCount));
+                        }
+                    });
+                }
+            });
         }
         catch (Exception e) {
             Log.e(TAG, String.format("trouble joining muc room %s", group_fulljid), e);
@@ -341,5 +375,24 @@ public class PartyChannel implements MessageListener {
             Log.e(TAG, "pingDangerOut", e);
             throw e;
         }
+    }
+
+    public void sendNotification(String title, String text) {
+        NotificationCompat.Builder mBuilder =
+                new NotificationCompat.Builder(mService)
+                        .setSmallIcon(R.drawable.my_launcher)
+                        .setContentTitle(title)
+                        .setContentText(text);
+
+        mBuilder.setContentIntent(null);
+        mBuilder.setAutoCancel(true);
+        mBuilder.setTicker(text);
+        mBuilder.setVibrate(new long[] { 1000, 1000});
+        NotificationManager mNotificationManager =
+                (NotificationManager) mService.getSystemService(Context.NOTIFICATION_SERVICE);
+        // mId allows you to update the notification later on.
+        mNotificationManager.notify(mNID, mBuilder.build());
+
+        mNotificationManager.cancel(mNID);
     }
 }
