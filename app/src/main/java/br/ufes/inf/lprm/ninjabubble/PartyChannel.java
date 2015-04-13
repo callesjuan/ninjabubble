@@ -64,7 +64,7 @@ public class PartyChannel implements MessageListener {
 
                     String from = presence.getFrom().split("/")[1];
 
-                    if (from.equals("mapper") || from.equals("correlator")) {
+                    if (from.equals("mapper") || from.equals("correlator") || from.equals(mChat.getNickname())) {
                         return;
                     }
 

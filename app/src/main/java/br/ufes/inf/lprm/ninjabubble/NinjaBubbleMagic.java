@@ -1,5 +1,7 @@
 package br.ufes.inf.lprm.ninjabubble;
 
+import android.app.AlertDialog;
+import android.app.Dialog;
 import android.app.IntentService;
 import android.app.Notification;
 import android.app.NotificationManager;
@@ -8,6 +10,7 @@ import android.app.Service;
 import android.app.TaskStackBuilder;
 import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.PixelFormat;
@@ -108,8 +111,12 @@ public class NinjaBubbleMagic extends Service {
 
     public int mPartyCount;
 
+    public MyBroadcastReceiver mBroadcastReceiver = new MyBroadcastReceiver();
+
     private final static String ACTION_ONSTARTCOMMAND = "ACTION_ONSTARTCOMMAND";
     private final static String ACTION_ONDESTROY = "ACTION_ONDESTROY";
+
+    private final static String NOTIFY_CORRELATION = "br.ufes.inf.lprm.ninjabubble.NOTIFIY_CORRELATION";
 
     public NinjaBubbleMagic() {
     }
@@ -220,7 +227,19 @@ public class NinjaBubbleMagic extends Service {
 
                 mWindowManager.removeView(mLoading);
 
+                try {
+                    IntentFilter intentFilter = new IntentFilter();
+                    intentFilter.addCategory(Intent.CATEGORY_DEFAULT);
+                    intentFilter.addAction(NOTIFY_CORRELATION);
+                    registerReceiver(mBroadcastReceiver, intentFilter);
+                } catch (Exception e) {}
+
             } else if (msg.getData().getString("action").equals(ACTION_ONDESTROY)) {
+
+                try {
+                    unregisterReceiver(mBroadcastReceiver);
+                } catch (Exception e) {}
+
                 try {
                     stopLocationListener();
                 } catch (Exception e) {
@@ -281,12 +300,12 @@ public class NinjaBubbleMagic extends Service {
         mLoading = new ProgressBar(this);
         mLoading.setIndeterminate(true);
         mWindowManager.addView(mLoading, new WindowManager.LayoutParams(
-                WindowManager.LayoutParams.WRAP_CONTENT,
-                WindowManager.LayoutParams.WRAP_CONTENT,
-                WindowManager.LayoutParams.TYPE_SYSTEM_ALERT,
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
-                PixelFormat.TRANSLUCENT
-            )
+                        WindowManager.LayoutParams.WRAP_CONTENT,
+                        WindowManager.LayoutParams.WRAP_CONTENT,
+                        WindowManager.LayoutParams.TYPE_SYSTEM_ALERT,
+                        WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+                        PixelFormat.TRANSLUCENT
+                )
         );
 
         Message msg = mServiceHandler.obtainMessage();
@@ -359,10 +378,11 @@ public class NinjaBubbleMagic extends Service {
                 Log.i(TAG, "location set on lat:" + location.getLatitude() + " and lng:" + location.getLongitude());
             }
             Log.i(TAG, "lcation set, or not?");
-        } catch (Exception e) {}
+        } catch (Exception e) {
+        }
     }
 
-    public void startLocationListener() throws Exception{
+    public void startLocationListener() throws Exception {
         try {
             if (mLocationListener == null) {
                 throw new Exception("locationListener is null");
@@ -379,7 +399,8 @@ public class NinjaBubbleMagic extends Service {
     public void stopLocationListener() {
         try {
             mLocationManager.removeUpdates(mLocationListener);
-        } catch (Exception e) {}
+        } catch (Exception e) {
+        }
     }
 
     public void startOrientationListener() throws Exception {
@@ -394,7 +415,8 @@ public class NinjaBubbleMagic extends Service {
     public void stopOrientationListener() {
         try {
             mSensorManager.unregisterListener(mSensorEventListener);
-        } catch (Exception e) {}
+        } catch (Exception e) {
+        }
     }
 
     public class MyLocationListener implements LocationListener {
@@ -403,9 +425,11 @@ public class NinjaBubbleMagic extends Service {
 
         Location mCurrentBestLocation;
 
-        /** Determines whether one Location reading is better than the current Location fix
-         * @param location  The new Location that you want to evaluate
-         * @param currentBestLocation  The current Location fix, to which you want to compare the new one
+        /**
+         * Determines whether one Location reading is better than the current Location fix
+         *
+         * @param location            The new Location that you want to evaluate
+         * @param currentBestLocation The current Location fix, to which you want to compare the new one
          */
         protected boolean isBetterLocation(Location location, Location currentBestLocation) {
             if (currentBestLocation == null) {
@@ -449,7 +473,9 @@ public class NinjaBubbleMagic extends Service {
             return false;
         }
 
-        /** Checks whether two providers are the same */
+        /**
+         * Checks whether two providers are the same
+         */
         private boolean isSameProvider(String provider1, String provider2) {
             if (provider1 == null) {
                 return provider2 == null;
@@ -477,7 +503,7 @@ public class NinjaBubbleMagic extends Service {
                                 try {
                                     mMapperChannel.updateLatlng(mLatlng);
 //                                    Toast.makeText(NinjaBubbleMagic.this, "update:true provider:" + location.getProvider() + " lat:"+location.getLatitude()+" lng:"+location.getLongitude(), Toast.LENGTH_SHORT).show();
-                                    Log.i(TAG, "update:true provider:" + location.getProvider() + " lat:"+location.getLatitude()+" lng:"+location.getLongitude());
+                                    Log.i(TAG, "update:true provider:" + location.getProvider() + " lat:" + location.getLatitude() + " lng:" + location.getLongitude());
                                 } catch (Exception e) {
                                     Log.e(TAG, "onLocationChanged", e);
                                 }
@@ -511,8 +537,8 @@ public class NinjaBubbleMagic extends Service {
 
     public class MySensorEventListener implements SensorEventListener {
 
-        public float []mGravity;
-        public float []mGeomagnetic;
+        public float[] mGravity;
+        public float[] mGeomagnetic;
 
         public Float mAzimut;
         public Float mAzimutInDegress;
@@ -521,7 +547,7 @@ public class NinjaBubbleMagic extends Service {
         @Override
         public void onSensorChanged(SensorEvent event) {
             try {
-                if (mStream != null && mStream.getString("status").equals("streaming") && mOverlayView.vMinimap != null &&  mOverlayView.vMinimap.mHasLoaded) {
+                if (mStream != null && mStream.getString("status").equals("streaming") && mOverlayView.vMinimap != null && mOverlayView.vMinimap.mHasLoaded) {
                     if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
                         mGravity = event.values;
                     } else if (event.sensor.getType() == Sensor.TYPE_MAGNETIC_FIELD) {
@@ -600,7 +626,7 @@ public class NinjaBubbleMagic extends Service {
                 String receiveString = "";
                 StringBuilder stringBuilder = new StringBuilder();
 
-                while ( (receiveString = bufferedReader.readLine()) != null ) {
+                while ((receiveString = bufferedReader.readLine()) != null) {
                     stringBuilder.append(receiveString);
                 }
 
@@ -608,7 +634,7 @@ public class NinjaBubbleMagic extends Service {
 
                 JSONArray jsonArray = new JSONArray(stringBuilder.toString());
 
-                for(int i = 0; i < jsonArray.length(); i++) {
+                for (int i = 0; i < jsonArray.length(); i++) {
                     history.add(jsonArray.getString(i));
                 }
             }
@@ -631,8 +657,7 @@ public class NinjaBubbleMagic extends Service {
             OutputStreamWriter outputStreamWriter = new OutputStreamWriter(openFileOutput(CHAT_FILENAME, Context.MODE_PRIVATE));
             outputStreamWriter.write(jsonArray.toString());
             outputStreamWriter.close();
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             Log.e("Exception", "File write failed: " + e.toString());
         }
     }
@@ -642,8 +667,42 @@ public class NinjaBubbleMagic extends Service {
             Log.i(TAG, "deleteChatHistory");
             File file = new File(getFilesDir().getPath() + "/" + CHAT_FILENAME);
             boolean deleted = file.delete();
-            Log.i(TAG, "deleteChatHistory:"+deleted);
-        } catch (Exception e) {Log.e(TAG, "deleteChatHistory", e);}
+            Log.i(TAG, "deleteChatHistory:" + deleted);
+        } catch (Exception e) {
+            Log.e(TAG, "deleteChatHistory", e);
+        }
+    }
+
+    public class MyBroadcastReceiver extends BroadcastReceiver {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+
+            if (intent.getAction().equals(NOTIFY_CORRELATION)) {
+                final String groupJid = intent.getStringExtra("group_jid");
+
+                AlertDialog.Builder builder = new AlertDialog.Builder(NinjaBubbleMagic.this);
+                builder.setTitle(R.string.alert_group_join);
+                builder.setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                mOverlayView.vHome.groupMatchGroupJoin(groupJid);
+                            }
+                        });
+                    }
+                });
+                builder.setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                    }
+                });
+                Dialog dialog = builder.create();
+                dialog.getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);
+                dialog.show();
+            }
+        }
     }
 
     public void notifyMember(String title, String text) {
@@ -668,14 +727,19 @@ public class NinjaBubbleMagic extends Service {
     public void notifyCorrelation(JSONObject args) {
 
         try {
-
             NotificationCompat.Builder mBuilder =
                     new NotificationCompat.Builder(this)
                             .setSmallIcon(R.drawable.my_launcher)
                             .setContentTitle("Group suggestion")
                             .setContentText(String.format("Join %s (%d)", args.getString("hashtags"), args.getInt("num_members")));
 
-            mBuilder.setContentIntent(null);
+            Intent intent = new Intent(NOTIFY_CORRELATION);
+            intent.putExtra("group_jid", args.getString("group_jid"));
+            intent.putExtra("hashtags", args.getString("hashtags"));
+            intent.putExtra("num_members", args.getInt("num_members"));
+            PendingIntent pendingIntent = PendingIntent.getBroadcast(this, 0, intent, PendingIntent.FLAG_CANCEL_CURRENT);
+
+            mBuilder.setContentIntent(pendingIntent);
             mBuilder.setAutoCancel(true);
             mBuilder.setTicker("Group suggestion");
             // mBuilder.setVibrate(new long[]{1000, 1000});

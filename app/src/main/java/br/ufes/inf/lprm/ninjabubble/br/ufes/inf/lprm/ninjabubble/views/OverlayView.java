@@ -218,7 +218,7 @@ public class OverlayView {
             imChat.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    if (mCurrentView.equals(V_MINIMAP)) {
+                    if (mCurrentView.equals(V_MINIMAP) && vMinimap.mTimer != null) {
                         vMinimap.mTimer.cancel();
                     }
 
