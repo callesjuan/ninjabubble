@@ -21,6 +21,7 @@ import android.hardware.SensorManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.os.BatteryManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -40,7 +41,10 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
@@ -110,6 +114,12 @@ public class NinjaBubbleMagic extends Service {
     public String mHashtags;
 
     public int mPartyCount;
+
+    public int mPacketCountSent = 0;
+    public int mPacketCountAsync = 0;
+    public int mPacketCountSync = 0;
+    public int mBattery1 = 0;
+    public int mBattery2 = 0;
 
     public MyBroadcastReceiver mBroadcastReceiver = new MyBroadcastReceiver();
 
@@ -264,6 +274,26 @@ public class NinjaBubbleMagic extends Service {
                     Log.i(TAG, "OverlayView succesfully removed");
                 } catch (Exception e) {
                     Log.w(TAG, "views were not added to windowmanager");
+                }
+
+                try {
+                    mBattery2 = getBatteryLevel();
+
+                    File folder = new File("/sdcard/LPRM/");
+                    if (!folder.exists()) {
+                        folder.mkdir();
+                    }
+
+                    File file = new File(folder, String.format("packets_%d.txt", System.currentTimeMillis()));
+                    BufferedWriter writer = new BufferedWriter(new FileWriter(file));
+                    writer.write("Total sent bytes:" + String.valueOf(mPacketCountSent));
+                    writer.write("Total received async bytes:" + String.valueOf(mPacketCountAsync));
+                    writer.write("Total received sync bytes:" + String.valueOf(mPacketCountSync));
+                    writer.write("Total bytes:" + String.valueOf(mPacketCountSent + mPacketCountAsync + mPacketCountSync));
+                    writer.write("Total consumed battery:" + String.valueOf(mBattery1 - mBattery2));
+                    writer.close();
+                } catch (Exception e) {
+                    Log.e(TAG, "couldn't write total packet traffic");
                 }
             }
         }
@@ -750,5 +780,15 @@ public class NinjaBubbleMagic extends Service {
         } catch (Exception e) {
             Log.e(TAG, "notifyCorrelation", e);
         }
+    }
+
+    public int getBatteryLevel() {
+        Intent batteryIntent = registerReceiver(null, new IntentFilter(Intent.ACTION_BATTERY_CHANGED));
+        int level = batteryIntent.getIntExtra(BatteryManager.EXTRA_LEVEL, 0);
+        int scale = batteryIntent.getIntExtra(BatteryManager.EXTRA_SCALE, 100);
+
+        int percent = (level * 100) / scale;
+
+        return percent;
     }
 }

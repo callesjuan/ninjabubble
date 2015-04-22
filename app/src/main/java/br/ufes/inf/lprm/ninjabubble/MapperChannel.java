@@ -6,12 +6,15 @@ import android.widget.Toast;
 
 import org.jivesoftware.smack.ConnectionConfiguration;
 import org.jivesoftware.smack.ConnectionListener;
+import org.jivesoftware.smack.PacketListener;
 import org.jivesoftware.smack.ReconnectionManager;
+import org.jivesoftware.smack.SmackException;
 import org.jivesoftware.smack.XMPPConnection;
 import org.jivesoftware.smack.chat.Chat;
 import org.jivesoftware.smack.chat.ChatManager;
 import org.jivesoftware.smack.chat.ChatMessageListener;
 import org.jivesoftware.smack.packet.Message;
+import org.jivesoftware.smack.packet.Packet;
 import org.jivesoftware.smack.tcp.XMPPTCPConnection;
 import org.jivesoftware.smack.tcp.XMPPTCPConnectionConfiguration;
 import org.json.JSONArray;
@@ -34,6 +37,10 @@ public class MapperChannel implements ChatMessageListener {
     public boolean mWaitingReply = false;
     public boolean mReplyError = false;
     public long mTimeout = 1000 * 30;
+
+    public PacketListener mPacketListenerSent;
+    public PacketListener mPacketListenerAsync;
+    public PacketListener mPacketListenerSync;
 
     final String DATE_PATTERN = "yyyy-MM-dd'T'HH:mm:ss.SSS";
     final String STAMP_PATTERN = "yyyyMMddHHmmss";
@@ -73,6 +80,33 @@ public class MapperChannel implements ChatMessageListener {
             ChatManager chatManager = ChatManager.getInstanceFor(mService.mXmppConnection);
             mChat = chatManager.createChat(mService.mMapperJID, this);
 
+            if(mService.mBattery1 == 0) {
+                mService.mBattery1 = mService.getBatteryLevel();
+            }
+
+            mPacketListenerSent = new PacketListener() {
+                @Override
+                public void processPacket(Packet packet) throws SmackException.NotConnectedException {
+                    mService.mPacketCountSent += packet.toString().length();
+                }
+            };
+            mPacketListenerAsync = new PacketListener() {
+                @Override
+                public void processPacket(Packet packet) throws SmackException.NotConnectedException {
+                    mService.mPacketCountAsync += packet.toString().length();
+                }
+            };
+            mPacketListenerSync = new PacketListener() {
+                @Override
+                public void processPacket(Packet packet) throws SmackException.NotConnectedException {
+                    mService.mPacketCountSync += packet.toString().length();
+                }
+            };
+
+            mService.mXmppConnection.addPacketSendingListener(mPacketListenerSent, null);
+            mService.mXmppConnection.addAsyncPacketListener(mPacketListenerAsync, null);
+            mService.mXmppConnection.addSyncPacketListener(mPacketListenerSync, null);
+
         } catch (Exception e) {
             throw e;
         }
@@ -80,6 +114,10 @@ public class MapperChannel implements ChatMessageListener {
 
     public void disconnect() {
         try {
+            mService.mXmppConnection.removePacketSendingListener(mPacketListenerSent);
+            mService.mXmppConnection.removeAsyncPacketListener(mPacketListenerAsync);
+            mService.mXmppConnection.removeSyncPacketListener(mPacketListenerSync);
+
             mService.mXmppConnection.disconnect();
         } catch (Exception e) {
         }
