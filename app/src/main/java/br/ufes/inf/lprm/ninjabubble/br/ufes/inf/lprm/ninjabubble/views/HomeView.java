@@ -123,6 +123,7 @@ public class HomeView extends ContentView {
                                                 bStreamPause.setVisibility(VISIBLE);
                                                 bStreamClose.setVisibility(VISIBLE);
 
+                                                bGroupMatch.setVisibility(VISIBLE);
                                                 bGroupLeave.setVisibility(VISIBLE);
 
                                                 try {

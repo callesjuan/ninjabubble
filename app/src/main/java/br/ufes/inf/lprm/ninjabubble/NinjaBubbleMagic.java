@@ -28,6 +28,7 @@ import android.os.HandlerThread;
 import android.os.IBinder;
 import android.os.Looper;
 import android.os.Message;
+import android.os.Vibrator;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 import android.view.WindowManager;
@@ -120,6 +121,10 @@ public class NinjaBubbleMagic extends Service {
     public int mPacketCountSync = 0;
     public int mBattery1 = 0;
     public int mBattery2 = 0;
+
+    public String mLastGroupSuggestion;
+    public int mSuggestionCount = 0;
+    public int mSuggestionIgnore = 6;
 
     public MyBroadcastReceiver mBroadcastReceiver = new MyBroadcastReceiver();
 
@@ -289,7 +294,7 @@ public class NinjaBubbleMagic extends Service {
                     writer.write("Total sent bytes:" + String.valueOf(mPacketCountSent));
                     writer.write("Total received async bytes:" + String.valueOf(mPacketCountAsync));
                     writer.write("Total received sync bytes:" + String.valueOf(mPacketCountSync));
-                    writer.write("Total bytes:" + String.valueOf(mPacketCountSent + mPacketCountAsync + mPacketCountSync));
+                    writer.write("Total received bytes:" + String.valueOf(mPacketCountAsync + mPacketCountSync));
                     writer.write("Total consumed battery:" + String.valueOf(mBattery1 - mBattery2));
                     writer.close();
                 } catch (Exception e) {
@@ -757,6 +762,20 @@ public class NinjaBubbleMagic extends Service {
     public void notifyCorrelation(JSONObject args) {
 
         try {
+            if (mLastGroupSuggestion != null && args.getString("group_jid").equals(mLastGroupSuggestion)) {
+                if (mSuggestionCount < mSuggestionIgnore) {
+                    mSuggestionCount++;
+                    return;
+                }
+                else {
+                    mSuggestionCount = 0;
+                }
+            }
+            else {
+                mLastGroupSuggestion = args.getString("group_jid");
+                mSuggestionCount = 0;
+            }
+
             NotificationCompat.Builder mBuilder =
                     new NotificationCompat.Builder(this)
                             .setSmallIcon(R.drawable.my_launcher)
@@ -777,6 +796,9 @@ public class NinjaBubbleMagic extends Service {
                     (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
             // mId allows you to update the notification later on.
             mNotificationManager.notify(mNotificationIdCorrelation, mBuilder.build());
+
+            Vibrator v = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+            v.vibrate(500);
         } catch (Exception e) {
             Log.e(TAG, "notifyCorrelation", e);
         }
