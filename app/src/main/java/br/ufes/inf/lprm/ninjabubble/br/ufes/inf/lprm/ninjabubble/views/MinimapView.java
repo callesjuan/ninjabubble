@@ -17,6 +17,7 @@ import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 
@@ -66,7 +67,7 @@ public class MinimapView extends ContentView {
     public String mPing;
 
     public int mDefaultTextColor;
-    public Button mLastPingButton;
+    public ImageButton mLastPingButton;
 
     public long mLastGroupFetchMembers = 0;
     public long mLastGroupFetchPings = 0;
@@ -98,7 +99,7 @@ public class MinimapView extends ContentView {
 
             if (mPing != null) {
                 mPing = null;
-                mLastPingButton.setTextColor(mDefaultTextColor);
+                mLastPingButton.setBackgroundColor(mDefaultTextColor);
                 mLastPingButton = null;
             }
         }
@@ -115,8 +116,9 @@ public class MinimapView extends ContentView {
             mOptions.setGravity(Gravity.CENTER);
             mOptions.setLayoutParams(new LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
 
-            Button bPan = new Button(getContext());
-            bPan.setText("PAN");
+            final ImageButton bPan = new ImageButton(getContext());
+            //bPan.setText("PAN");
+            bPan.setImageResource(R.drawable.pan);
             bPan.setOnClickListener(new OnClickListener() {
                 @Override
                 public void onClick(View v) {
@@ -139,93 +141,98 @@ public class MinimapView extends ContentView {
             });
             mOptions.addView(bPan);
 
-            final Button bPingTarget = new Button(getContext());
-            bPingTarget.setText(PING_TARGET);
+            final ImageButton bPingTarget = new ImageButton(getContext());
+            //bPingTarget.setText(PING_TARGET);
+            bPingTarget.setImageResource(R.drawable.ping_target);
             bPingTarget.setOnClickListener(new OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     if (mPing == null) {
                         mPing = PING_TARGET;
-                        bPingTarget.setTextColor(Color.parseColor("red"));
+                        bPingTarget.setBackgroundColor(Color.parseColor("red"));
                         mLastPingButton = bPingTarget;
 
                         mMapView.getOverlays().add(mMapEventsOverlay);
                     } else if (mPing.equals(PING_TARGET)) {
                         mPing = null;
-                        bPingTarget.setTextColor(mDefaultTextColor);
+                        bPingTarget.setBackgroundColor(mDefaultTextColor);
                         mLastPingButton = null;
 
                         mMapView.getOverlays().remove(mMapEventsOverlay);
+                        mMapView.invalidate();
                     } else if (!mPing.equals(PING_TARGET)) {
                         mPing = PING_TARGET;
-                        bPingTarget.setTextColor(Color.parseColor("red"));
+                        bPingTarget.setBackgroundColor(Color.parseColor("red"));
 
-                        mLastPingButton.setTextColor(mDefaultTextColor);
+                        mLastPingButton.setBackgroundColor(mDefaultTextColor);
                         mLastPingButton = bPingTarget;
                     }
                 }
             });
             mOptions.addView(bPingTarget);
 
-            final Button bPingAssist = new Button(getContext());
-            bPingAssist.setText(PING_ASSIST);
+            final ImageButton bPingAssist = new ImageButton(getContext());
+            //bPingAssist.setText(PING_ASSIST);
+            bPingAssist.setImageResource(R.drawable.ping_assist);
             bPingAssist.setOnClickListener(new OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     if (mPing == null) {
                         mPing = PING_ASSIST;
-                        bPingAssist.setTextColor(Color.parseColor("red"));
+                        bPingAssist.setBackgroundColor(Color.parseColor("red"));
                         mLastPingButton = bPingAssist;
 
                         mMapView.getOverlays().add(mMapEventsOverlay);
                     } else if (mPing.equals(PING_ASSIST)) {
                         mPing = null;
-                        bPingAssist.setTextColor(mDefaultTextColor);
+                        bPingAssist.setBackgroundColor(mDefaultTextColor);
                         mLastPingButton = null;
 
                         mMapView.getOverlays().remove(mMapEventsOverlay);
+                        mMapView.invalidate();
                     } else if (!mPing.equals(PING_ASSIST)) {
                         mPing = PING_ASSIST;
-                        bPingAssist.setTextColor(Color.parseColor("red"));
+                        bPingAssist.setBackgroundColor(Color.parseColor("red"));
 
-                        mLastPingButton.setTextColor(mDefaultTextColor);
+                        mLastPingButton.setBackgroundColor(mDefaultTextColor);
                         mLastPingButton = bPingAssist;
                     }
                 }
             });
             mOptions.addView(bPingAssist);
 
-            final Button bPingDanger = new Button(getContext());
-            bPingDanger.setText(PING_DANGER);
+            final ImageButton bPingDanger = new ImageButton(getContext());
+            //bPingDanger.setText(PING_DANGER);
+            bPingDanger.setImageResource(R.drawable.ping_danger);
             bPingDanger.setOnClickListener(new OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     if (mPing == null) {
                         mPing = PING_DANGER;
-                        bPingDanger.setTextColor(Color.parseColor("red"));
+                        bPingDanger.setBackgroundColor(Color.parseColor("red"));
                         mLastPingButton = bPingDanger;
 
                         mMapView.getOverlays().add(mMapEventsOverlay);
                         mMapView.invalidate();
                     } else if (mPing.equals(PING_DANGER)) {
                         mPing = null;
-                        bPingDanger.setTextColor(mDefaultTextColor);
+                        bPingDanger.setBackgroundColor(mDefaultTextColor);
                         mLastPingButton = null;
 
                         mMapView.getOverlays().remove(mMapEventsOverlay);
                         mMapView.invalidate();
                     } else if (!mPing.equals(PING_DANGER)) {
                         mPing = PING_DANGER;
-                        bPingDanger.setTextColor(Color.parseColor("red"));
+                        bPingDanger.setBackgroundColor(Color.parseColor("red"));
 
-                        mLastPingButton.setTextColor(mDefaultTextColor);
+                        mLastPingButton.setBackgroundColor(mDefaultTextColor);
                         mLastPingButton = bPingDanger;
                     }
                 }
             });
             mOptions.addView(bPingDanger);
 
-            mDefaultTextColor = bPan.getCurrentTextColor();
+            mDefaultTextColor = bPan.getSolidColor();
         }
 
         mMapView = new MapView(getContext(), 10);
@@ -525,7 +532,7 @@ public class MinimapView extends ContentView {
                     final String pingString = mPing;
 
                     mPing = null;
-                    mLastPingButton.setTextColor(mDefaultTextColor);
+                    mLastPingButton.setBackgroundColor(mDefaultTextColor);
                     mLastPingButton = null;
                     mMapView.getOverlays().remove(mMapEventsOverlay);
 

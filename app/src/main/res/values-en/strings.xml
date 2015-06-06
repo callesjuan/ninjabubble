@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">NinjaBubble</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="action_settings">Settings</string>
+    <string name="service_start">NinjaBubble is running</string>
+    <string name="toggle_on">Start</string>
+    <string name="toggle_off">Stop</string>
+    <string name="lbl_jid">JID:</string>
+    <string name="lbl_pwd">Password:</string>
+    <string name="lbl_media">Streaming App:</string>
+    <string name="lbl_channel">Channel ID:</string>
+    <string name="lbl_hashtags">Hashtags:</string>
+    <string name="fnc_lifecycle">Lifecycle</string>
+    <string name="fnc_minimap">Minimap</string>
+    <string name="fnc_members">Members</string>
+    <string name="fnc_hide">Hide</string>
+    <string name="btn_group_match">Find groups</string>
+    <string name="btn_group_leave">Leave group</string>
+    <string name="btn_stream_init">Start context sharing</string>
+    <string name="btn_stream_pause">Pause context sharing</string>
+    <string name="btn_stream_resume">Resume context sharing</string>
+    <string name="btn_stream_close">Close context sharing</string>
+    <string name="btn_cancel">Cancel</string>
+    <string name="loading">Loading...</string>
+    <string name="alert_matched_groups">Matched groups</string>
+    <string name="alert_group_join">Confirm join\?</string>
+    <string name="alert_group_leave">Confirm leave\?</string>
+    <string name="alert_stream_init">Provide hashtags</string>
+    <string name="alert_stream_close">Confirm close?</string>
+    <string name="success_groupleave">Left group successfully</string>
+    <string name="success_groupjoin">Joined group successfully</string>
+    <string name="error_streaminit">Could not initiate sharing</string>
+    <string name="error_streaminit_hashtags">Hashtags must be provided</string>
+    <string name="error_streampause">Could not pause sharing</string>
+    <string name="error_streamresume">Could not resume sharing</string>
+    <string name="error_streamclose">Could not close sharing</string>
+    <string name="error_groupjoin">Could not join group, messaging won\'t be available</string>
+    <string name="error_groupleave">Could not join new group</string>
+    <string name="error_groupmatch">Error while finding groups</string>
+    <string name="error_groupmatch_empty">No found groups</string>
+    <string name="error_groupfetchmembers">Could not fetch party members</string>
+    <string name="error_groupfetchpings">Could not fetch pings</string>
+    <string name="error_connection">Connection was lost, sharing automatically paused</string>
+    <string name="error_reconnection">Could not automatically resume sharing, do it manually</string>
+    <string name="error_location">Location unavailable</string>
+    <string name="error_locationprovideroff">GPS provider went disabled</string>
+    <string name="error_ping">Error while sending minimap message</string>
+
+    <string-array name="spin_media">
+        <item>Twitcasting</item>
+        <item>Livestream</item>
+        <item>Ustream</item>
+    </string-array>
+    <string name="title_activity_transparent">TransparentActivity</string>
+
+</resources>
